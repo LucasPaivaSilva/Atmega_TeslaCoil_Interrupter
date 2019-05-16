@@ -147,6 +147,17 @@ void ChangePWLimit(int operation)
 	SettingsChar[13] = PW_multStr[0];
 }
 
+void ChangePW(int operation, unsigned char DisplayChar[])
+{
+	if ((operation == 1)&&(PW_mult<PW_mult_limit)){PW_mult = PW_mult + 0.1;}
+	if ((operation == 0)&&(PW_mult>0.5)){PW_mult = PW_mult - 0.1;}
+	Pw_mult_to_display = (PW_mult * 10);
+	ident_num(Pw_mult_to_display, PW_multStr);
+	DisplayChar[13] = PW_multStr[1];
+	DisplayChar[14] = '.';
+	DisplayChar[15] = PW_multStr[0];
+}
+
 void RefreshDisplay(unsigned char DisplayChar[])
 {
 	int x;
@@ -177,6 +188,12 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 			DisplayChar[DisplaySelectionBar[DisplaySelectionPosition]] = '>';
 			RefreshDisplay(DisplayChar);
 			break;
+			
+			case 1:
+			ChangePW(0, MIDIChar);
+			ConvertBars(MIDIChar, PW_mult, PW_mult_limit);
+			RefreshDisplay(MIDIChar);
+			break;
 
 			case 4:
 			ChangePWLimit(0);
@@ -195,6 +212,12 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 			if (DisplaySelectionPosition == 1){StateSelection = 2; ConvertBars(FixedChar, PW_mult, PW_mult_limit); RefreshDisplay(FixedChar);}
 			if (DisplaySelectionPosition == 2){StateSelection = 3; RefreshDisplay(NoneChar);}
 			if (DisplaySelectionPosition == 3){StateSelection = 4; ChangePWLimit(2); RefreshDisplay(SettingsChar);}
+			break;
+			
+			case 1:
+			ChangePW(1, MIDIChar);
+			ConvertBars(MIDIChar, PW_mult, PW_mult_limit);
+			RefreshDisplay(MIDIChar);
 			break;
 
 			case 4:
