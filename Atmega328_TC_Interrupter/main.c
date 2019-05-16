@@ -140,6 +140,7 @@ void ChangePWLimit(int operation)
 {
 	if ((operation == 1)&&(PW_mult_limit<4)){PW_mult_limit = PW_mult_limit + 0.1;}
 	if ((operation == 0)&&(PW_mult_limit>0.5)){PW_mult_limit = PW_mult_limit - 0.1;}
+	if (PW_mult>PW_mult_limit){PW_mult = PW_mult_limit;}
 	Pw_mult_to_display = (PW_mult_limit * 10);
 	ident_num(Pw_mult_to_display, PW_multStr);
 	SettingsChar[11] = PW_multStr[1];
