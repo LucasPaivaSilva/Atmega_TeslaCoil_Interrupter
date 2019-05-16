@@ -8,7 +8,7 @@
 #include "defs.h"
 
 float PW_mult = 1.5;
-float PW_mult_limit = 2.5;
+float PW_mult_limit = 3.0;
 int	  Pw_mult_to_display = 1;
 unsigned char PW_multStr[4];
 
@@ -29,12 +29,12 @@ unsigned char MenuChar[] = {0x20, 'M', 'I', 'D', 'I', 0x20, 0x20, 0x20, 'F', 'i'
 unsigned char MenuSelectionBar[] = {0, 7, 16, 23};
 
 //MIDI Variables
-unsigned char MIDIChar[] = {0x20, 'M', 'I', 'D', 'I', 0x20, 0x20, 0x20, 'M', 'I', 'D', 'I', 'd', 0x20, 0x20, 0x20,
-							0x20, 'M', 'I', 'D', 'I', 0x20, 0x20, 0x20, 's' , 'e' , 't', 't', 'i', 'n', 'g', 's'};
+unsigned char MIDIChar[] = {'E', '5', '-', '4', '4', '0', 'H', 'z', 0x20, 0x20, 'P', 'W', ':', '1', '.', '5',
+							0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20};
 unsigned char MIDISelectionBar[] = {0, 7, 16, 23};
 	
 //Fixed Variables
-unsigned char FixedChar[] = {0x20, '4', '4', '0', 0x20, 'H', 'z', 0x20, 0x20, 'P', 'W', ':', 0x20, '1', '.', '5',
+unsigned char FixedChar[] = {0x20, '4', '4', '0', 'H', 'z', 0x20, 0x20, 0x20, 'P', 'W', ':', '1', '.', '5', 0x20,
 							0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20 , 0x20 , 0x20, 0x20, 0x20, 0x20, 0x20, 0x20};
 unsigned char FixedSelectionBar[] = {0, 7, 16, 23};
 
@@ -52,6 +52,7 @@ void InitMessage();
 void ChangePWLimit(int operation);
 void RefreshDisplay(unsigned char DisplayChar[]);
 void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBar[]);
+void ConvertBars(unsigned char DisplayChar[], float PW, float PWMax);
 ISR(PCINT0_vect);
 
 
@@ -104,6 +105,22 @@ int main(void)
 		debouncePB5 = 0;
     }
 }
+
+void ConvertBars(unsigned char DisplayChar[], float PW, float PWMax)
+{
+	int Nbars = 0, x = 0;
+	for (x=0; x<16; x++)
+	{
+		DisplayChar[16+x] = 0x20;
+	}
+	Nbars = (16*PW)/PWMax;
+	for (x=0; x<Nbars; x++)
+	{
+		DisplayChar[16+x] = 0xFF;
+	}
+		
+}
+
 
 void InitMessage()
 {
@@ -174,8 +191,8 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 		switch (StateSelection)
 		{
 			case 0:
-			if (DisplaySelectionPosition == 0){StateSelection = 1; RefreshDisplay(MIDIChar);}
-			if (DisplaySelectionPosition == 1){StateSelection = 2; RefreshDisplay(FixedChar);}
+			if (DisplaySelectionPosition == 0){StateSelection = 1; ConvertBars(MIDIChar, PW_mult, PW_mult_limit); RefreshDisplay(MIDIChar);}
+			if (DisplaySelectionPosition == 1){StateSelection = 2; ConvertBars(FixedChar, PW_mult, PW_mult_limit); RefreshDisplay(FixedChar);}
 			if (DisplaySelectionPosition == 2){StateSelection = 3; RefreshDisplay(NoneChar);}
 			if (DisplaySelectionPosition == 3){StateSelection = 4; ChangePWLimit(2); RefreshDisplay(SettingsChar);}
 			break;
