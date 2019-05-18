@@ -8,7 +8,7 @@
 #include "defs.h"
 
 float PW_mult = 1.5;
-float PW_mult_limit = 3.0;
+float PW_mult_limit = 2.0;
 int	  Pw_mult_to_display = 1;
 unsigned char PW_multStr[4];
 
@@ -136,27 +136,35 @@ void InitMessage()
 	cmd_LCD(1, 0);
 };
 
-void ChangePWLimit(int operation)
-{
-	if ((operation == 1)&&(PW_mult_limit<4)){PW_mult_limit = PW_mult_limit + 0.1;}
-	if ((operation == 0)&&(PW_mult_limit>0.5)){PW_mult_limit = PW_mult_limit - 0.1;}
-	if (PW_mult>PW_mult_limit){PW_mult = PW_mult_limit;}
-	Pw_mult_to_display = (PW_mult_limit * 10);
-	ident_num(Pw_mult_to_display, PW_multStr);
-	SettingsChar[11] = PW_multStr[1];
-	SettingsChar[12] = '.';
-	SettingsChar[13] = PW_multStr[0];
-}
-
 void ChangePW(int operation, unsigned char DisplayChar[])
 {
 	if ((operation == 1)&&(PW_mult<PW_mult_limit)){PW_mult = PW_mult + 0.1;}
-	if ((operation == 0)&&(PW_mult>0.5)){PW_mult = PW_mult - 0.1;}
+	if ((operation == 0)&&(PW_mult>0)){PW_mult = PW_mult - 0.1;}
+	if (PW_mult>=PW_mult_limit){PW_mult = PW_mult_limit;}
 	Pw_mult_to_display = (PW_mult * 10);
 	ident_num(Pw_mult_to_display, PW_multStr);
 	DisplayChar[13] = PW_multStr[1];
 	DisplayChar[14] = '.';
 	DisplayChar[15] = PW_multStr[0];
+}
+
+
+void ChangePWLimit(int operation)
+{
+	if ((operation == 1)&&(PW_mult_limit<4)){PW_mult_limit = PW_mult_limit + 0.1;}
+	if ((operation == 0)&&(PW_mult_limit>0.5)){PW_mult_limit = PW_mult_limit - 0.1;}
+		
+	if (PW_mult>=PW_mult_limit)
+	{
+		PW_mult = PW_mult_limit;
+		ChangePW(2, MIDIChar);
+	}
+	
+	Pw_mult_to_display = (PW_mult_limit * 10);
+	ident_num(Pw_mult_to_display, PW_multStr);
+	SettingsChar[11] = PW_multStr[1];
+	SettingsChar[12] = '.';
+	SettingsChar[13] = PW_multStr[0];
 }
 
 void RefreshDisplay(unsigned char DisplayChar[])
