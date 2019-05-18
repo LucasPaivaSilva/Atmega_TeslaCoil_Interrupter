@@ -7,10 +7,16 @@
 
 #include "defs.h"
 
-float PW_mult = 1.5;
+float PW_mult = 1.0;
 float PW_mult_limit = 2.0;
 int	  Pw_mult_to_display = 1;
 unsigned char PW_multStr[4];
+
+int FixedFreq = 220;
+int FixedFrqLimit = 500;
+unsigned char FixedFreqStr[4];
+
+volatile int ON_TIME = 200;
 
 int debouncePB3 = 0;
 int debouncePB4 = 0;
@@ -21,26 +27,27 @@ int PB5Flag = 0;
 
 
 int StateSelection = 0;
-int DisplaySelectionPosition = 3;
+
 
 //Menu Variables
 unsigned char MenuChar[] = {0x20, 'M', 'I', 'D', 'I', 0x20, 0x20, 0x20, 'F', 'i', 'x', 'e', 'd', 0x20, 0x20, 0x20,
-						    0x20, 'N', 'o', 'n', 'e', 0x20, 0x20, 0x20, 'S' , 'e' , 't', 't', 'i', 'n', 'g', 's'};
+						    0x20, 'T', 'e', 's', 't', 0x20, 0x20, 0x20, 'S' , 'e' , 't', 't', 'i', 'n', 'g', 's'};
 unsigned char MenuSelectionBar[] = {0, 7, 16, 23};
+int MenuSelectionPosition = 3;
 
 //MIDI Variables
-unsigned char MIDIChar[] = {'E', '5', '-', '4', '4', '0', 'H', 'z', 0x20, 0x20, 'P', 'W', ':', '1', '.', '5',
+unsigned char MIDIChar[] = {'E', '5', '-', '4', '4', '0', 'H', 'z', 0x20, 0x20, 'P', 'W', ':', '1', '.', '7',
 							0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20};
 unsigned char MIDISelectionBar[] = {0, 7, 16, 23};
 	
 //Fixed Variables
-unsigned char FixedChar[] = {0x20, '4', '4', '0', 'H', 'z', 0x20, 0x20, 0x20, 'P', 'W', ':', '1', '.', '5', 0x20,
+unsigned char FixedChar[] = {0x20, '4', '4', '0', 'H', 'z', 0x20, 0x20, 0x20,  0x20, 'P', 'W', ':', '1', '.', '2',
 							0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20 , 0x20 , 0x20, 0x20, 0x20, 0x20, 0x20, 0x20};
-unsigned char FixedSelectionBar[] = {0, 7, 16, 23};
+unsigned char FixedSelectionBar[] = {0, 8};
 
-//None
-unsigned char NoneChar[] = {0x20, 'N', 'o', 'n', 'e', 0x20, 0x20, 0x20, 'N', 'o', 'n', 'e', 'N', 'o', 'n', 'e',
-							0x20, 'N', 'o', 'n', 'e', 0x20, 0x20, 0x20, 'N', 'o', 'n', 'e', 'N', 'o', 'n', 'e'};
+//Test
+unsigned char NoneChar[] = {0x20, 'B', '1', ':',  0x20, '2', '0', '0', 'H', 'z', '@', '5', '0', '0', 'm', 'S',
+							0x20, 'B', '2', ':',  0x20, '1', '0', '0', 'H', 'z', '@', '5', '0', '0', 'm', 'S',};
 unsigned char NoneSelectionBar[] = {0, 7, 16, 23};
 	
 //Settings
@@ -53,6 +60,9 @@ void ChangePWLimit(int operation);
 void RefreshDisplay(unsigned char DisplayChar[]);
 void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBar[]);
 void ConvertBars(unsigned char DisplayChar[], float PW, float PWMax);
+void ChangeFixedFreq(int operation, unsigned char DisplayChar[]);
+void ChangePW(int operation, unsigned char DisplayChar[]);
+int GetOnTime(int freq)
 ISR(PCINT0_vect);
 
 
@@ -62,18 +72,31 @@ int main(void)
 {
     
 	DDRD = 0xFF; 
+	DDRC |=  (1 << 2);
+	PORTC &= ~(1 << 2); 
 	DDRB  = 0x00;	
 	PORTB = 0xFF;
 	
 	//interrupção dos bots
 	PCICR = 1<<PCIE0;
 	PCMSK0 = (1<<PCINT3) | (1<<PCINT4) | (1<<PCINT5);
+	
+	//Timer
+	TCCR1A = 0x00;                        
+	TCCR1B = (1 << CS11) | (1 << WGM12); 
+	
+	OCR1A   = 12300;
+	TCNT1   = 0;             
+	TIMSK1 |= (1 << OCIE1A);  
+	
+		
 	sei();
 	
 	inic_LCD_4bits();
 	InitMessage();
 	ModifyDisplay(MenuChar, MenuSelectionBar);
-	
+	ChangeFixedFreq(2, FixedChar);								//Atualiza o valor de FixedChar com a frequencia(sem alterar a mesma)
+	ChangePW(2, MIDIChar);										//Atualiza o valor de MIDIChar p PW(sem alterar o mesmo
     while (1) 
     {
 		
@@ -106,14 +129,14 @@ int main(void)
     }
 }
 
-void ConvertBars(unsigned char DisplayChar[], float PW, float PWMax)
+void ConvertBars(unsigned char DisplayChar[], float V, float Vmax)
 {
 	int Nbars = 0, x = 0;
 	for (x=0; x<16; x++)
 	{
 		DisplayChar[16+x] = 0x20;
 	}
-	Nbars = (16*PW)/PWMax;
+	Nbars = (16*V)/Vmax;
 	for (x=0; x<Nbars; x++)
 	{
 		DisplayChar[16+x] = 0xFF;
@@ -139,13 +162,23 @@ void InitMessage()
 void ChangePW(int operation, unsigned char DisplayChar[])
 {
 	if ((operation == 1)&&(PW_mult<PW_mult_limit)){PW_mult = PW_mult + 0.1;}
-	if ((operation == 0)&&(PW_mult>0)){PW_mult = PW_mult - 0.1;}
+	if ((operation == 0)&&(PW_mult>0.1)){PW_mult = PW_mult - 0.1;}
 	if (PW_mult>=PW_mult_limit){PW_mult = PW_mult_limit;}
 	Pw_mult_to_display = (PW_mult * 10);
 	ident_num(Pw_mult_to_display, PW_multStr);
 	DisplayChar[13] = PW_multStr[1];
 	DisplayChar[14] = '.';
 	DisplayChar[15] = PW_multStr[0];
+}
+
+void ChangeFixedFreq(int operation, unsigned char DisplayChar[])
+{
+	if ((operation == 1)&&(FixedFreq<FixedFrqLimit)){FixedFreq = FixedFreq + 10;}
+	if ((operation == 0)&&(FixedFreq>0)){FixedFreq = FixedFreq - 10;}
+	ident_num(FixedFreq, FixedFreqStr);
+	DisplayChar[1] = FixedFreqStr[2];
+	DisplayChar[2] = FixedFreqStr[1];
+	DisplayChar[3] = FixedFreqStr[0];
 }
 
 
@@ -191,10 +224,10 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 		switch (StateSelection)
 		{
 			case 0:
-			DisplayChar[DisplaySelectionBar[DisplaySelectionPosition]] = 0x20;
-			DisplaySelectionPosition++;
-			if (DisplaySelectionPosition == 4){DisplaySelectionPosition = 0;}
-			DisplayChar[DisplaySelectionBar[DisplaySelectionPosition]] = '>';
+			DisplayChar[DisplaySelectionBar[MenuSelectionPosition]] = 0x20;
+			MenuSelectionPosition++;
+			if (MenuSelectionPosition == 4){MenuSelectionPosition = 0;}
+			DisplayChar[DisplaySelectionBar[MenuSelectionPosition]] = '>';
 			RefreshDisplay(DisplayChar);
 			break;
 			
@@ -202,6 +235,16 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 			ChangePW(0, MIDIChar);
 			ConvertBars(MIDIChar, PW_mult, PW_mult_limit);
 			RefreshDisplay(MIDIChar);
+			break;
+			
+			case 2:
+			ChangeFixedFreq(0, FixedChar);
+			ConvertBars(FixedChar, FixedFreq, FixedFrqLimit);
+			RefreshDisplay(FixedChar);
+			break;
+			
+			case 3:
+			
 			break;
 
 			case 4:
@@ -217,16 +260,26 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 		switch (StateSelection)
 		{
 			case 0:
-			if (DisplaySelectionPosition == 0){StateSelection = 1; ConvertBars(MIDIChar, PW_mult, PW_mult_limit); RefreshDisplay(MIDIChar);}
-			if (DisplaySelectionPosition == 1){StateSelection = 2; ConvertBars(FixedChar, PW_mult, PW_mult_limit); RefreshDisplay(FixedChar);}
-			if (DisplaySelectionPosition == 2){StateSelection = 3; RefreshDisplay(NoneChar);}
-			if (DisplaySelectionPosition == 3){StateSelection = 4; ChangePWLimit(2); RefreshDisplay(SettingsChar);}
+			if (MenuSelectionPosition == 0){StateSelection = 1; ConvertBars(MIDIChar, PW_mult, PW_mult_limit); RefreshDisplay(MIDIChar);}
+			if (MenuSelectionPosition == 1){StateSelection = 2; ConvertBars(FixedChar, FixedFreq, FixedFrqLimit); ChangePW(2, FixedChar); RefreshDisplay(FixedChar);}
+			if (MenuSelectionPosition == 2){StateSelection = 3; RefreshDisplay(NoneChar);}
+			if (MenuSelectionPosition == 3){StateSelection = 4; ChangePWLimit(2); RefreshDisplay(SettingsChar);}
 			break;
 			
 			case 1:
 			ChangePW(1, MIDIChar);
 			ConvertBars(MIDIChar, PW_mult, PW_mult_limit);
 			RefreshDisplay(MIDIChar);
+			break;
+			
+			case 2:
+			ChangeFixedFreq(1, FixedChar);
+			ConvertBars(FixedChar, FixedFreq, FixedFrqLimit);
+			RefreshDisplay(FixedChar);
+			break;
+			
+			case 3:
+			
 			break;
 
 			case 4:
@@ -264,10 +317,26 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 	}
 }
 
+int GetOnTime(int freq)
+{
+	int on_time = 10;
+	if (freq < 700)  {on_time = 20;}
+	if (freq < 600)  {on_time = 23;}
+	if (freq < 500)  {on_time = 27;}
+	if (freq < 400)  {on_time = 30;}
+	if (freq < 300)  {on_time = 35;}
+	if (freq < 200)  {on_time = 40;}
+	if (freq < 100)  {on_time = 45;}
+	on_time = on_time * PW_mult;
+	return on_time;
+}
+
+
 ISR(PCINT0_vect) //interrupção do TC1
 {
 	if ((!tst_bit(PINB, PB4))&&(debouncePB4==0))
 	{
+		
 		PB4Flag = 1;
 		debouncePB4 = 1;
 	}
@@ -281,6 +350,18 @@ ISR(PCINT0_vect) //interrupção do TC1
 		PB3Flag = 1;
 		debouncePB3 = 1;
 	}
+}
+
+
+ISR(TIMER1_COMPA_vect)
+{
+	int x;
+	PORTC |= (1 << 2);           
+	for (x=0;x<ON_TIME;x++)
+	{
+		_delay_us(1);
+	}
+	PORTC &= ~(1 << 2);          
 }
 
 
