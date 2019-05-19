@@ -62,7 +62,7 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 void ConvertBars(unsigned char DisplayChar[], float PW, float PWMax);
 void ChangeFixedFreq(int operation, unsigned char DisplayChar[]);
 void ChangePW(int operation, unsigned char DisplayChar[]);
-int GetOnTime(int freq)
+int GetOnTime(int freq);
 ISR(PCINT0_vect);
 
 
@@ -85,9 +85,9 @@ int main(void)
 	TCCR1A = 0x00;                        
 	TCCR1B = (1 << CS11) | (1 << WGM12); 
 	
-	OCR1A   = 12300;
-	TCNT1   = 0;             
-	TIMSK1 |= (1 << OCIE1A);  
+// 	OCR1A   = 12300;
+// 	TCNT1   = 0;             
+// 	TIMSK1 |= (1 << OCIE1A);  
 	
 		
 	sei();
@@ -96,7 +96,7 @@ int main(void)
 	InitMessage();
 	ModifyDisplay(MenuChar, MenuSelectionBar);
 	ChangeFixedFreq(2, FixedChar);								//Atualiza o valor de FixedChar com a frequencia(sem alterar a mesma)
-	ChangePW(2, MIDIChar);										//Atualiza o valor de MIDIChar p PW(sem alterar o mesmo
+	ChangePW(2, MIDIChar);										//Atualiza o valor de MIDIChar p PW(sem alterar o mesmo)
     while (1) 
     {
 		
