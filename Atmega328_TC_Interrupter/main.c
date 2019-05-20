@@ -368,7 +368,7 @@ void GetMidi()
 int NoteToFreq()
 {
 	int pitch;
-	pitch = (int)(note_srt[1]-'0') + (int)(note_srt[2]-'0');
+	pitch = (int)((note_srt[1]-'0')*10) + (int)(note_srt[2]-'0');
 	
 	return (int) (220.0 * pow(pow(2.0, 1.0/12.0), pitch - 57) + 0.5);
 }
