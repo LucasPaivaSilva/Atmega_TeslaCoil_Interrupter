@@ -27,8 +27,8 @@ int PB5Flag = 0;
 
 int StateSelection = 0;
 
-unsigned char status; //recebe o valor de note on ou note off
-char note_srt[2]; // recebe o valor da nota
+char note_srt[3]; // recebe o valor da nota e o estado da mesma
+unsigned char freqstr[4];
 
 
 //Menu Variables
@@ -117,7 +117,7 @@ int main(void)
 			GetMidi();
 			NoteOnOff(NoteToFreq());
 			NoteToDisplay();
-			RefreshDisplay(MIDIChar);
+			//RefreshDisplay(MIDIChar);
 			ModifyDisplay(MIDIChar, MIDISelectionBar);
 			break;
 			
@@ -133,7 +133,6 @@ int main(void)
 			ModifyDisplay(SettingsChar, SettingsSelectionBar);
 			break;
 		}
-		_delay_ms(500);
 		debouncePB3 = 0;
 		debouncePB4 = 0;
 		debouncePB5 = 0;
@@ -344,20 +343,23 @@ int GetOnTime(int freq)
 
 void GetMidi()
 {
+	char status; 
 	int recived = 0;
 	while(recived == 0)
 	{
 		status = USART_Recebe();
 		if (status == 'L')
 		{
-			note_srt[0]= USART_Recebe();
+			note_srt[0]= 'L';
 			note_srt[1]= USART_Recebe();
+			note_srt[2]= USART_Recebe();
 			recived = 1;
 		}
 		if (status == 'D')
 		{
-			note_srt[0]= USART_Recebe();
+			note_srt[0]= 'D';
 			note_srt[1]= USART_Recebe();
+			note_srt[2]= USART_Recebe();
 			recived = 1;
 		}
 	}
@@ -365,21 +367,24 @@ void GetMidi()
 
 int NoteToFreq()
 {
-	int pitch = atoi(note_srt);
-	return pitch;
+	int pitch;
+	pitch = (int)(note_srt[1]-'0') + (int)(note_srt[2]-'0');
+	
+	return (int) (220.0 * pow(pow(2.0, 1.0/12.0), pitch - 57) + 0.5);
 }
 
 void NoteOnOff(int frequency)
 {
-	if (status == 'L')
+	int period; 
+	if (note_srt[0] == 'L')
 	{
-		int period = 1000000 / frequency;
+		period = 1000000 / frequency;
 		ON_TIME = GetOnTime(frequency); 
 		OCR1A   = 2 * period;     
 		TCNT1   = 0;              
 		TIMSK1 |= (1 << OCIE1A); 
 	}
-	if (status == 'D')
+	if (note_srt[0] == 'D')
 	{
 		TIMSK1 &= ~(1 << OCIE1A);
 	}
@@ -387,13 +392,14 @@ void NoteOnOff(int frequency)
 
 void NoteToDisplay()
 {
-	unsigned char freqstr[4];
-	int freq = NoteToFreq();
+	int freq;
+	freq = NoteToFreq();
 	ident_num(freq, freqstr);
 	//MIDIChar[1] = note_srt[0];
-	MIDIChar[2] = status;
-	MIDIChar[3] = freqstr[0];
-	MIDIChar[4] = freqstr[1];
+	MIDIChar[2] = freqstr[0];
+	MIDIChar[3] = freqstr[1];
+	MIDIChar[4] = freqstr[2];
+	MIDIChar[5] = freqstr[3];
 }
 
 
