@@ -71,9 +71,11 @@ ISR(PCINT0_vect);
 int main(void)
 {
     
-	DDRC = 0xFF; 
-	DDRB  = 0b111100;	
-	PORTB = 0b111100;
+	DDRD = 0xFF;
+	DDRC |=  (1 << 2);
+	PORTC &= ~(1 << 2);
+	DDRB  = 0x00;
+	PORTB = 0xFF;
 	
 	//interrupção dos bots
 	PCICR = 1<<PCIE0;
@@ -354,12 +356,12 @@ ISR(PCINT0_vect) //interrupção do TC1
 ISR(TIMER1_COMPA_vect)
 {
 	int x;
-	PORTB |= (1 << 2);           
+	PORTC |= (1 << 2);           
 	for (x=0;x<ON_TIME;x++)
 	{
 		_delay_us(1);
 	}
-	PORTB &= ~(1 << 2);          
+	PORTC &= ~(1 << 2);          
 }
 
 
