@@ -15,7 +15,9 @@
 #include <util/delay.h>		//biblioteca para o uso das rotinas de _delay_ms e _delay_us()
 #include <avr/pgmspace.h>   //para o uso do PROGMEM, gravação de dados na memória flash
 #include <avr/interrupt.h>
+#include <stdlib.h>
 #include "LCD.h"
+#include "USART.h"
 
 //Definições de macros para o trabalho com bits
 

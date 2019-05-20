@@ -25,8 +25,10 @@ int PB3Flag = 0;
 int PB4Flag = 1;
 int PB5Flag = 0;
 
-
 int StateSelection = 0;
+
+unsigned char status; //recebe o valor de note on ou note off
+char note_srt[2]; // recebe o valor da nota
 
 
 //Menu Variables
@@ -36,7 +38,7 @@ unsigned char MenuSelectionBar[] = {0, 7, 16, 23};
 int MenuSelectionPosition = 3;
 
 //MIDI Variables
-unsigned char MIDIChar[] = {'E', '5', '-', '4', '4', '0', 'H', 'z', 0x20, 0x20, 'P', 'W', ':', '1', '.', '7',
+unsigned char MIDIChar[] = {0x20, 0x20,0x20, 0x20, 0x20, 0x20, 'H', 'z', 0x20, 0x20, 'P', 'W', ':', '1', '.', '7',
 							0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20};
 unsigned char MIDISelectionBar[] = {0, 7, 16, 23};
 	
@@ -63,7 +65,12 @@ void ConvertBars(unsigned char DisplayChar[], float PW, float PWMax);
 void ChangeFixedFreq(int operation, unsigned char DisplayChar[]);
 void ChangePW(int operation, unsigned char DisplayChar[]);
 int GetOnTime(int freq);
+void GetMidi();
+void NoteOnOff(int frequency);
+int NoteToFreq();
+void NoteToDisplay();
 ISR(PCINT0_vect);
+ISR(TIMER1_COMPA_vect);
 
 
 
@@ -91,7 +98,7 @@ int main(void)
 	
 		
 	sei();
-	
+	USART_Inic(MYUBRR);
 	inic_LCD_4bits();
 	InitMessage();
 	ModifyDisplay(MenuChar, MenuSelectionBar);
@@ -107,6 +114,10 @@ int main(void)
 			break;
 
 			case 1:
+			GetMidi();
+			NoteOnOff(NoteToFreq());
+			NoteToDisplay();
+			RefreshDisplay(MIDIChar);
 			ModifyDisplay(MIDIChar, MIDISelectionBar);
 			break;
 			
@@ -329,6 +340,60 @@ int GetOnTime(int freq)
 	if (freq < 100)  {on_time = 45;}
 	on_time = on_time * PW_mult;
 	return on_time;
+}
+
+void GetMidi()
+{
+	int recived = 0;
+	while(recived == 0)
+	{
+		status = USART_Recebe();
+		if (status == 'L')
+		{
+			note_srt[0]= USART_Recebe();
+			note_srt[1]= USART_Recebe();
+			recived = 1;
+		}
+		if (status == 'D')
+		{
+			note_srt[0]= USART_Recebe();
+			note_srt[1]= USART_Recebe();
+			recived = 1;
+		}
+	}
+}
+
+int NoteToFreq()
+{
+	int pitch = atoi(note_srt);
+	return pitch;
+}
+
+void NoteOnOff(int frequency)
+{
+	if (status == 'L')
+	{
+		int period = 1000000 / frequency;
+		ON_TIME = GetOnTime(frequency); 
+		OCR1A   = 2 * period;     
+		TCNT1   = 0;              
+		TIMSK1 |= (1 << OCIE1A); 
+	}
+	if (status == 'D')
+	{
+		TIMSK1 &= ~(1 << OCIE1A);
+	}
+}
+
+void NoteToDisplay()
+{
+	unsigned char freqstr[4];
+	int freq = NoteToFreq();
+	ident_num(freq, freqstr);
+	//MIDIChar[1] = note_srt[0];
+	MIDIChar[2] = status;
+	MIDIChar[3] = freqstr[0];
+	MIDIChar[4] = freqstr[1];
 }
 
 
