@@ -117,7 +117,7 @@ int main(void)
 			GetMidi();
 			NoteOnOff(NoteToFreq());
 			NoteToDisplay();
-			//RefreshDisplay(MIDIChar);
+			RefreshDisplay(MIDIChar);
 			ModifyDisplay(MIDIChar, MIDISelectionBar);
 			break;
 			
@@ -396,10 +396,10 @@ void NoteToDisplay()
 	freq = NoteToFreq();
 	ident_num(freq, freqstr);
 	//MIDIChar[1] = note_srt[0];
-	MIDIChar[2] = freqstr[0];
-	MIDIChar[3] = freqstr[1];
-	MIDIChar[4] = freqstr[2];
-	MIDIChar[5] = freqstr[3];
+	MIDIChar[2] = freqstr[3];
+	MIDIChar[3] = freqstr[2];
+	MIDIChar[4] = freqstr[1];
+	MIDIChar[5] = freqstr[0];
 }
 
 
