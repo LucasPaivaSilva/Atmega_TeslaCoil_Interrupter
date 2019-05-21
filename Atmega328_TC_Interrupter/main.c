@@ -48,13 +48,13 @@ unsigned char FixedChar[] = {0x20, '4', '4', '0', 'H', 'z', 0x20, 0x20, 0x20,  0
 unsigned char FixedSelectionBar[] = {0, 8};
 
 //Test
-unsigned char NoneChar[] = {0x20, 'B', '1', ':',  0x20, '2', '0', '0', 'H', 'z', '@', '5', '0', '0', 'm', 'S',
-							0x20, 'B', '2', ':',  0x20, '1', '0', '0', 'H', 'z', '@', '5', '0', '0', 'm', 'S',};
+unsigned char NoneChar[] = {0x20, 'B', '1', ':',  0x20, '1', '0', '0', 'H', 'z', '@', '5', '0', '0', 'm', 'S',
+							0x20, 'B', '2', ':',  0x20, '2', '0', '0', 'H', 'z', '@', '5', '0', '0', 'm', 'S',};
 unsigned char NoneSelectionBar[] = {0, 7, 16, 23};
 	
 //Settings
 unsigned char SettingsChar[] = {0x20, 'P' , 'W' , '_' , 'l' , 'i' , 'm' , 'i' , 't', ':', 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
-								0x20, 'V', 'e', 'r', 's', 'i', 'o', 'n',0x20, '0', '.', '3', '0', 0x20, 0x20, 0x20};
+								0x20, 'V', 'e', 'r', 's', 'i', 'o', 'n',0x20, '0', '.', '5', '0', 0x20, 0x20, 0x20};
 unsigned char SettingsSelectionBar[] = {0, 7, 16, 23};
 
 void InitMessage();
@@ -249,12 +249,17 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 			
 			case 2:
 			ChangeFixedFreq(0, FixedChar);
+			NoteOnOff(FixedFreq);
 			ConvertBars(FixedChar, FixedFreq, FixedFrqLimit);
 			RefreshDisplay(FixedChar);
 			break;
 			
 			case 3:
-			
+			note_srt[0]= 'L';
+			NoteOnOff(100);
+			_delay_ms(500);
+			note_srt[0]= 'D';
+			NoteOnOff(100);			
 			break;
 
 			case 4:
@@ -270,10 +275,35 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 		switch (StateSelection)
 		{
 			case 0:
-			if (MenuSelectionPosition == 0){StateSelection = 1; ConvertBars(MIDIChar, PW_mult, PW_mult_limit); RefreshDisplay(MIDIChar);}
-			if (MenuSelectionPosition == 1){StateSelection = 2; ConvertBars(FixedChar, FixedFreq, FixedFrqLimit); ChangePW(2, FixedChar); RefreshDisplay(FixedChar);}
-			if (MenuSelectionPosition == 2){StateSelection = 3; RefreshDisplay(NoneChar);}
-			if (MenuSelectionPosition == 3){StateSelection = 4; ChangePWLimit(2); RefreshDisplay(SettingsChar);}
+			if (MenuSelectionPosition == 0)
+			{
+				StateSelection = 1; 
+				ConvertBars(MIDIChar, PW_mult, PW_mult_limit); 
+				RefreshDisplay(MIDIChar);
+			}
+			
+			if (MenuSelectionPosition == 1)
+			{
+				StateSelection = 2; 
+				ConvertBars(FixedChar, FixedFreq, FixedFrqLimit); 
+				ChangePW(2, FixedChar); 
+				RefreshDisplay(FixedChar);
+				note_srt[0]= 'L';
+				NoteOnOff(FixedFreq);
+			}
+			
+			if (MenuSelectionPosition == 2)
+			{
+				StateSelection = 3; 
+				RefreshDisplay(NoneChar);
+			}
+			
+			if (MenuSelectionPosition == 3)
+			{
+				StateSelection = 4; 
+				ChangePWLimit(2); 
+				RefreshDisplay(SettingsChar);
+			}
 			break;
 			
 			case 1:
@@ -284,12 +314,17 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 			
 			case 2:
 			ChangeFixedFreq(1, FixedChar);
+			NoteOnOff(FixedFreq);
 			ConvertBars(FixedChar, FixedFreq, FixedFrqLimit);
 			RefreshDisplay(FixedChar);
 			break;
 			
 			case 3:
-			
+			note_srt[0]= 'L';
+			NoteOnOff(200);
+			_delay_ms(500);
+			note_srt[0]= 'D';
+			NoteOnOff(200);
 			break;
 
 			case 4:
@@ -308,19 +343,25 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 			break;
 
 			case 1:
-			StateSelection = 0; RefreshDisplay(MenuChar);
+			StateSelection = 0; 
+			RefreshDisplay(MenuChar);
 			break;
 			
 			case 2:
-			StateSelection = 0; RefreshDisplay(MenuChar);
+			StateSelection = 0; 
+			RefreshDisplay(MenuChar);
+			note_srt[0]= 'D';
+			NoteOnOff(FixedFreq);
 			break;
 			
 			case 3:
-			StateSelection = 0; RefreshDisplay(MenuChar);
+			StateSelection = 0; 
+			RefreshDisplay(MenuChar);
 			break;
 			
 			case 4:
-			StateSelection = 0; RefreshDisplay(MenuChar);
+			StateSelection = 0; 
+			RefreshDisplay(MenuChar);
 			break;
 			
 		}
