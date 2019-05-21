@@ -38,7 +38,7 @@ unsigned char MenuSelectionBar[] = {0, 7, 16, 23};
 int MenuSelectionPosition = 3;
 
 //MIDI Variables
-unsigned char MIDIChar[] = {0x20, 0x20,0x20, 0x20, 0x20, 0x20, 'H', 'z', 0x20, 0x20, 'P', 'W', ':', '1', '.', '7',
+unsigned char MIDIChar[] = {0x20, 0x20,0x20, 0x20, 0x20, 'H', 'z', 0x20, 0x20, 0x20, 'P', 'W', ':', '1', '.', '7',
 							0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20};
 unsigned char MIDISelectionBar[] = {0, 7, 16, 23};
 	
@@ -133,9 +133,19 @@ int main(void)
 			ModifyDisplay(SettingsChar, SettingsSelectionBar);
 			break;
 		}
-		debouncePB3 = 0;
-		debouncePB4 = 0;
-		debouncePB5 = 0;
+		if (!(StateSelection==1))
+		{
+			_delay_ms(500);
+			debouncePB3 = 0;
+			debouncePB4 = 0;
+			debouncePB5 = 0;
+		}
+		else
+		{
+			debouncePB3 = 0;
+			debouncePB4 = 0;
+			debouncePB5 = 0;
+		}
     }
 }
 
@@ -184,7 +194,7 @@ void ChangePW(int operation, unsigned char DisplayChar[])
 void ChangeFixedFreq(int operation, unsigned char DisplayChar[])
 {
 	if ((operation == 1)&&(FixedFreq<FixedFrqLimit)){FixedFreq = FixedFreq + 10;}
-	if ((operation == 0)&&(FixedFreq>0)){FixedFreq = FixedFreq - 10;}
+	if ((operation == 0)&&(FixedFreq>50)){FixedFreq = FixedFreq - 10;}
 	ident_num(FixedFreq, FixedFreqStr);
 	DisplayChar[1] = FixedFreqStr[2];
 	DisplayChar[2] = FixedFreqStr[1];
@@ -437,10 +447,9 @@ void NoteToDisplay()
 	freq = NoteToFreq();
 	ident_num(freq, freqstr);
 	//MIDIChar[1] = note_srt[0];
-	MIDIChar[2] = freqstr[3];
-	MIDIChar[3] = freqstr[2];
-	MIDIChar[4] = freqstr[1];
-	MIDIChar[5] = freqstr[0];
+	MIDIChar[2] = freqstr[2];
+	MIDIChar[3] = freqstr[1];
+	MIDIChar[4] = freqstr[0];
 }
 
 
