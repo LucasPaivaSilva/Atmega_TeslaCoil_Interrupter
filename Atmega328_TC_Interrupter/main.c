@@ -19,6 +19,7 @@ unsigned char FixedFreqStr[4];
 volatile int ON_TIME = 200;
 
 int NewSerial = 0;
+int blabla = 0;
 
 int debouncePB3 = 0;
 int debouncePB4 = 0;
@@ -79,7 +80,7 @@ int main(void)
 {
     
 	DDRD = 0xFF;
-	DDRC |=  (1 << 2);
+	DDRC |=  0xFF;
 	PORTC &= ~(1 << 2);
 	DDRB  = 0x00;
 	PORTB = 0xFF;
@@ -96,7 +97,7 @@ int main(void)
 // 	TCNT1   = 0;             
 // 	TIMSK1 |= (1 << OCIE1A);  
 	
-		
+	set_bit(PORTC, PC1);
 	USART_Inic(MYUBRR);
 	set_bit(UCSR0B, RXCIE0);
 	inic_LCD_4bits();
@@ -121,6 +122,14 @@ int main(void)
 				NewSerial = 0;
 				NoteOnOff(NoteToFreq());
 				NoteToDisplay();
+				if (note_srt[0] == 'L')
+				{
+					MIDIChar[0] = '|';
+				}
+				else
+				{
+					MIDIChar[0] = '/';
+				}
 				RefreshDisplay(MIDIChar);
 			}
 			ModifyDisplay(MIDIChar, MenuSelectionBar);
@@ -151,6 +160,11 @@ int main(void)
 			debouncePB4 = 0;
 			debouncePB5 = 0;
 		}
+		blabla++;
+		if (blabla >=10)
+		{
+			clr_bit(PORTC, PC1);
+		}
     }
 }
 
@@ -160,11 +174,11 @@ void InitMessage()
 	escreve_LCD("Paiva's TC");
 	cmd_LCD(0xC0, 0);
 	escreve_LCD("328P Interrupter");
-	_delay_ms(300);
+	_delay_ms(3000);
 	cmd_LCD(1, 0);
 	cmd_LCD(0x80, 0);
 	escreve_LCD("Version 0.1");
-	_delay_ms(100);
+	_delay_ms(1000);
 	cmd_LCD(1, 0);
 };
 

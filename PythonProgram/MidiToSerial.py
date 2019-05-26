@@ -25,6 +25,8 @@ try:
             	data = 'L'
             else:
             	data = 'D'
+            if message.note <= 16:
+                message.note = 16
             data = data + str(message.note)
             print(data)
             ser.write(data.encode())
