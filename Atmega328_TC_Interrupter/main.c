@@ -28,6 +28,7 @@ int PB4Flag = 1;
 int PB5Flag = 0;
 
 int StateSelection = 0;
+int FixedModeSubStateSelection = 0;
 
 char note_srt[3]; // recebe o valor da nota e o estado da mesma
 unsigned char freqstr[4];
@@ -42,22 +43,20 @@ int MenuSelectionPosition = 3;
 //MIDI Variables
 unsigned char MIDIChar[] = {0x20, 0x20,0x20, 0x20, 0x20, 'H', 'z', 0x20, 0x20, 0x20, 'P', 'W', ':', '1', '.', '7',
 							0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20};
-unsigned char MIDISelectionBar[] = {0, 7, 16, 23};
 	
 //Fixed Variables
-unsigned char FixedChar[] = {0x20, '4', '4', '0', 'H', 'z', 0x20, 0x20, 0x20,  0x20, 'P', 'W', ':', '1', '.', '2',
+unsigned char FixedChar[] = {'>', '4', '4', '0', 'H', 'z', 0x20, 0x20, 0x20,  0x20, 'P', 'W', ':', '1', '.', '2',
 							0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20 , 0x20 , 0x20, 0x20, 0x20, 0x20, 0x20, 0x20};
-unsigned char FixedSelectionBar[] = {0, 8};
+unsigned char FixedSelectionBar[] = {0, 9};
+int FixedSelectionPosition = 0;
 
 //Test
 unsigned char NoneChar[] = {0x20, 'B', '1', ':',  0x20, '1', '0', '0', 'H', 'z', '@', '5', '0', '0', 'm', 'S',
 							0x20, 'B', '2', ':',  0x20, '2', '0', '0', 'H', 'z', '@', '5', '0', '0', 'm', 'S',};
-unsigned char NoneSelectionBar[] = {0, 7, 16, 23};
 	
 //Settings
 unsigned char SettingsChar[] = {0x20, 'P' , 'W' , '_' , 'l' , 'i' , 'm' , 'i' , 't', ':', 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
 								0x20, 'V', 'e', 'r', 's', 'i', 'o', 'n',0x20, '0', '.', '9', '0', 0x20, 0x20, 0x20};
-unsigned char SettingsSelectionBar[] = {0, 7, 16, 23};
 
 void InitMessage();
 void ChangePWLimit(int operation);
@@ -124,7 +123,7 @@ int main(void)
 				NoteToDisplay();
 				RefreshDisplay(MIDIChar);
 			}
-			ModifyDisplay(MIDIChar, MIDISelectionBar);
+			ModifyDisplay(MIDIChar, MenuSelectionBar);
 			break;
 			
 			case 2:
@@ -132,11 +131,11 @@ int main(void)
 			break;
 			
 			case 3:
-			ModifyDisplay(NoneChar, NoneSelectionBar);
+			ModifyDisplay(NoneChar, MenuSelectionBar);
 			break;
 			
 			case 4:
-			ModifyDisplay(SettingsChar, SettingsSelectionBar);
+			ModifyDisplay(SettingsChar, MenuSelectionBar);
 			break;
 		}
 		if (!(StateSelection==1))
@@ -207,10 +206,26 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 			break;
 			
 			case 2:
-			ChangeFixedFreq(0, FixedChar);
-			NoteOnOff(FixedFreq);
-			ConvertBars(FixedChar, FixedFreq, FixedFrqLimit);
-			RefreshDisplay(FixedChar);
+			if (FixedModeSubStateSelection == 0)
+			{
+				DisplayChar[DisplaySelectionBar[FixedSelectionPosition]] = 0x20;
+				FixedSelectionPosition++;
+				if (FixedSelectionPosition == 2){FixedSelectionPosition = 0;};
+				DisplayChar[DisplaySelectionBar[FixedSelectionPosition]] = '>';
+				RefreshDisplay(DisplayChar);
+			}
+			else if (FixedModeSubStateSelection == 1)
+			{
+				ChangeFixedFreq(0, FixedChar);
+				NoteOnOff(FixedFreq);
+				RefreshDisplay(FixedChar);
+			}
+			else if (FixedModeSubStateSelection == 2)
+			{
+				ChangePW(0, FixedChar);
+				ConvertBars(FixedChar, PW_mult, PW_mult_limit);
+				RefreshDisplay(FixedChar);
+			}
 			break;
 			
 			case 3:
@@ -248,8 +263,8 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 			if (MenuSelectionPosition == 1)
 			{
 				StateSelection = 2; 
-				ConvertBars(FixedChar, FixedFreq, FixedFrqLimit); 
 				ChangePW(2, FixedChar); 
+				ConvertBars(FixedChar, PW_mult, PW_mult_limit); 
 				RefreshDisplay(FixedChar);
 				note_srt[0]= 'L';
 				NoteOnOff(FixedFreq);
@@ -276,10 +291,31 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 			break;
 			
 			case 2:
-			ChangeFixedFreq(1, FixedChar);
-			NoteOnOff(FixedFreq);
-			ConvertBars(FixedChar, FixedFreq, FixedFrqLimit);
-			RefreshDisplay(FixedChar);
+			if (FixedModeSubStateSelection == 0)
+			{
+				if (FixedSelectionPosition == 0)
+				{
+					FixedModeSubStateSelection = 1;
+				}
+				if (FixedSelectionPosition == 1)
+				{
+					FixedModeSubStateSelection = 2;
+				}
+				DisplayChar[DisplaySelectionBar[FixedSelectionPosition]] = '|';
+				RefreshDisplay(FixedChar);
+			}
+			else if (FixedModeSubStateSelection == 1)
+			{
+				ChangeFixedFreq(1, FixedChar);
+				NoteOnOff(FixedFreq);
+				RefreshDisplay(FixedChar);
+			}
+			else if (FixedModeSubStateSelection == 2)
+			{
+				ChangePW(1, FixedChar);
+				ConvertBars(FixedChar, PW_mult, PW_mult_limit);
+				RefreshDisplay(FixedChar);
+			}
 			break;
 			
 			case 3:
@@ -317,14 +353,29 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 			break;
 			
 			case 2:
-			StateSelection = 0; 
-			RefreshDisplay(MenuChar);
-			note_srt[0]= 'D';
-			NoteOnOff(FixedFreq);
+			if (FixedModeSubStateSelection == 0)
+			{
+				StateSelection = 0;
+				RefreshDisplay(MenuChar);
+				note_srt[0]= 'D';
+				NoteOnOff(FixedFreq);
+			}
+			else if (FixedModeSubStateSelection == 1)
+			{
+				FixedModeSubStateSelection = 0;
+				DisplayChar[DisplaySelectionBar[FixedSelectionPosition]] = '>';
+				RefreshDisplay(FixedChar);
+			}
+			else if (FixedModeSubStateSelection == 2)
+			{
+				FixedModeSubStateSelection = 0;
+				DisplayChar[DisplaySelectionBar[FixedSelectionPosition]] = '>';
+				RefreshDisplay(FixedChar);
+			}
 			break;
 			
 			case 3:
-			StateSelection = 0; 
+			StateSelection = 0;
 			RefreshDisplay(MenuChar);
 			break;
 			
