@@ -21,10 +21,10 @@ try:
         print('Waiting for messages...')
         for message in port:
             print('Received {}'.format(message))
-            if message.velocity == 0:
-            	data = 'D'
-            else:
+            if message.type == 'note_on':
             	data = 'L'
+            else:
+            	data = 'D'
             data = data + str(message.note)
             print(data)
             ser.write(data.encode())

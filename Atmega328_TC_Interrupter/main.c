@@ -18,6 +18,8 @@ unsigned char FixedFreqStr[4];
 
 volatile int ON_TIME = 200;
 
+int NewSerial = 0;
+
 int debouncePB3 = 0;
 int debouncePB4 = 0;
 int debouncePB5 = 0;
@@ -54,7 +56,7 @@ unsigned char NoneSelectionBar[] = {0, 7, 16, 23};
 	
 //Settings
 unsigned char SettingsChar[] = {0x20, 'P' , 'W' , '_' , 'l' , 'i' , 'm' , 'i' , 't', ':', 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
-								0x20, 'V', 'e', 'r', 's', 'i', 'o', 'n',0x20, '0', '.', '5', '0', 0x20, 0x20, 0x20};
+								0x20, 'V', 'e', 'r', 's', 'i', 'o', 'n',0x20, '0', '.', '9', '0', 0x20, 0x20, 0x20};
 unsigned char SettingsSelectionBar[] = {0, 7, 16, 23};
 
 void InitMessage();
@@ -65,7 +67,6 @@ void ConvertBars(unsigned char DisplayChar[], float PW, float PWMax);
 void ChangeFixedFreq(int operation, unsigned char DisplayChar[]);
 void ChangePW(int operation, unsigned char DisplayChar[]);
 int GetOnTime(int freq);
-void GetMidi();
 void NoteOnOff(int frequency);
 int NoteToFreq();
 void NoteToDisplay();
@@ -97,13 +98,15 @@ int main(void)
 // 	TIMSK1 |= (1 << OCIE1A);  
 	
 		
-	sei();
 	USART_Inic(MYUBRR);
+	set_bit(UCSR0B, RXCIE0);
 	inic_LCD_4bits();
 	InitMessage();
 	ModifyDisplay(MenuChar, MenuSelectionBar);
-	ChangeFixedFreq(2, FixedChar);								//Atualiza o valor de FixedChar com a frequencia(sem alterar a mesma)
-	ChangePW(2, MIDIChar);										//Atualiza o valor de MIDIChar p PW(sem alterar o mesmo)
+	ChangeFixedFreq(2, FixedChar);							
+	ChangePW(2, MIDIChar);		
+	sei();	
+								
     while (1) 
     {
 		
@@ -114,10 +117,13 @@ int main(void)
 			break;
 
 			case 1:
-			GetMidi();
-			NoteOnOff(NoteToFreq());
-			NoteToDisplay();
-			RefreshDisplay(MIDIChar);
+			if (NewSerial == 1)
+			{
+				NewSerial = 0;
+				NoteOnOff(NoteToFreq());
+				NoteToDisplay();
+				RefreshDisplay(MIDIChar);
+			}
 			ModifyDisplay(MIDIChar, MIDISelectionBar);
 			break;
 			
@@ -355,6 +361,8 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 			case 1:
 			StateSelection = 0; 
 			RefreshDisplay(MenuChar);
+			note_srt[0]= 'D';
+			NoteOnOff(0);
 			break;
 			
 			case 2:
@@ -392,30 +400,6 @@ int GetOnTime(int freq)
 	return on_time;
 }
 
-void GetMidi()
-{
-	char status; 
-	int recived = 0;
-	while(recived == 0)
-	{
-		status = USART_Recebe();
-		if (status == 'L')
-		{
-			note_srt[0]= 'L';
-			note_srt[1]= USART_Recebe();
-			note_srt[2]= USART_Recebe();
-			recived = 1;
-		}
-		if (status == 'D')
-		{
-			note_srt[0]= 'D';
-			note_srt[1]= USART_Recebe();
-			note_srt[2]= USART_Recebe();
-			recived = 1;
-		}
-	}
-}
-
 int NoteToFreq()
 {
 	int pitch;
@@ -450,6 +434,31 @@ void NoteToDisplay()
 	MIDIChar[2] = freqstr[2];
 	MIDIChar[3] = freqstr[1];
 	MIDIChar[4] = freqstr[0];
+}
+
+ISR(USART_RX_vect)
+{
+	char status;
+	int recived = 0;
+	while(recived == 0)
+	{
+		status = USART_Recebe();
+		if (status == 'L')
+		{
+			note_srt[0]= 'L';
+			note_srt[1]= USART_Recebe();
+			note_srt[2]= USART_Recebe();
+			recived = 1;
+		}
+		if (status == 'D')
+		{
+			note_srt[0]= 'D';
+			note_srt[1]= USART_Recebe();
+			note_srt[2]= USART_Recebe();
+			recived = 1;
+		}
+	}
+	NewSerial = 1;
 }
 
 
