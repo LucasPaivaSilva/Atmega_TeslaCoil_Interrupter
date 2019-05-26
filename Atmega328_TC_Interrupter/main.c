@@ -155,22 +155,6 @@ int main(void)
     }
 }
 
-void ConvertBars(unsigned char DisplayChar[], float V, float Vmax)
-{
-	int Nbars = 0, x = 0;
-	for (x=0; x<16; x++)
-	{
-		DisplayChar[16+x] = 0x20;
-	}
-	Nbars = (16*V)/Vmax;
-	for (x=0; x<Nbars; x++)
-	{
-		DisplayChar[16+x] = 0xFF;
-	}
-		
-}
-
-
 void InitMessage()
 {
 	cmd_LCD(0x80, 0);
@@ -184,47 +168,6 @@ void InitMessage()
 	_delay_ms(100);
 	cmd_LCD(1, 0);
 };
-
-void ChangePW(int operation, unsigned char DisplayChar[])
-{
-	if ((operation == 1)&&(PW_mult<PW_mult_limit)){PW_mult = PW_mult + 0.1;}
-	if ((operation == 0)&&(PW_mult>0.1)){PW_mult = PW_mult - 0.1;}
-	if (PW_mult>=PW_mult_limit){PW_mult = PW_mult_limit;}
-	Pw_mult_to_display = (PW_mult * 10);
-	ident_num(Pw_mult_to_display, PW_multStr);
-	DisplayChar[13] = PW_multStr[1];
-	DisplayChar[14] = '.';
-	DisplayChar[15] = PW_multStr[0];
-}
-
-void ChangeFixedFreq(int operation, unsigned char DisplayChar[])
-{
-	if ((operation == 1)&&(FixedFreq<FixedFrqLimit)){FixedFreq = FixedFreq + 10;}
-	if ((operation == 0)&&(FixedFreq>50)){FixedFreq = FixedFreq - 10;}
-	ident_num(FixedFreq, FixedFreqStr);
-	DisplayChar[1] = FixedFreqStr[2];
-	DisplayChar[2] = FixedFreqStr[1];
-	DisplayChar[3] = FixedFreqStr[0];
-}
-
-
-void ChangePWLimit(int operation)
-{
-	if ((operation == 1)&&(PW_mult_limit<4)){PW_mult_limit = PW_mult_limit + 0.1;}
-	if ((operation == 0)&&(PW_mult_limit>0.5)){PW_mult_limit = PW_mult_limit - 0.1;}
-		
-	if (PW_mult>=PW_mult_limit)
-	{
-		PW_mult = PW_mult_limit;
-		ChangePW(2, MIDIChar);
-	}
-	
-	Pw_mult_to_display = (PW_mult_limit * 10);
-	ident_num(Pw_mult_to_display, PW_multStr);
-	SettingsChar[11] = PW_multStr[1];
-	SettingsChar[12] = '.';
-	SettingsChar[13] = PW_multStr[0];
-}
 
 void RefreshDisplay(unsigned char DisplayChar[])
 {
@@ -271,11 +214,15 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 			break;
 			
 			case 3:
+			NoneChar[0] = '>';
+			RefreshDisplay(NoneChar);
 			note_srt[0]= 'L';
 			NoteOnOff(100);
 			_delay_ms(500);
 			note_srt[0]= 'D';
-			NoteOnOff(100);			
+			NoteOnOff(100);	
+			NoneChar[0] = 0x20;
+			RefreshDisplay(NoneChar);		
 			break;
 
 			case 4:
@@ -336,11 +283,15 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 			break;
 			
 			case 3:
+			NoneChar[16] = '>';
+			RefreshDisplay(NoneChar);
 			note_srt[0]= 'L';
 			NoteOnOff(200);
 			_delay_ms(500);
 			note_srt[0]= 'D';
 			NoteOnOff(200);
+			NoneChar[16] = 0x20;
+			RefreshDisplay(NoneChar);
 			break;
 
 			case 4:
@@ -386,6 +337,47 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 	}
 }
 
+void ChangePW(int operation, unsigned char DisplayChar[])
+{
+	if ((operation == 1)&&(PW_mult<PW_mult_limit)){PW_mult = PW_mult + 0.1;}
+	if ((operation == 0)&&(PW_mult>0.1)){PW_mult = PW_mult - 0.1;}
+	if (PW_mult>=PW_mult_limit){PW_mult = PW_mult_limit;}
+	Pw_mult_to_display = (PW_mult * 10);
+	ident_num(Pw_mult_to_display, PW_multStr);
+	DisplayChar[13] = PW_multStr[1];
+	DisplayChar[14] = '.';
+	DisplayChar[15] = PW_multStr[0];
+}
+
+void ChangeFixedFreq(int operation, unsigned char DisplayChar[])
+{
+	if ((operation == 1)&&(FixedFreq<FixedFrqLimit)){FixedFreq = FixedFreq + 10;}
+	if ((operation == 0)&&(FixedFreq>50)){FixedFreq = FixedFreq - 10;}
+	ident_num(FixedFreq, FixedFreqStr);
+	DisplayChar[1] = FixedFreqStr[2];
+	DisplayChar[2] = FixedFreqStr[1];
+	DisplayChar[3] = FixedFreqStr[0];
+}
+
+
+void ChangePWLimit(int operation)
+{
+	if ((operation == 1)&&(PW_mult_limit<4)){PW_mult_limit = PW_mult_limit + 0.1;}
+	if ((operation == 0)&&(PW_mult_limit>0.5)){PW_mult_limit = PW_mult_limit - 0.1;}
+		
+	if (PW_mult>=PW_mult_limit)
+	{
+		PW_mult = PW_mult_limit;
+		ChangePW(2, MIDIChar);
+	}
+	
+	Pw_mult_to_display = (PW_mult_limit * 10);
+	ident_num(Pw_mult_to_display, PW_multStr);
+	SettingsChar[11] = PW_multStr[1];
+	SettingsChar[12] = '.';
+	SettingsChar[13] = PW_multStr[0];
+}
+
 int GetOnTime(int freq)
 {
 	int on_time = 10;
@@ -398,6 +390,21 @@ int GetOnTime(int freq)
 	if (freq < 100)  {on_time = 45;}
 	on_time = on_time * PW_mult;
 	return on_time;
+}
+
+void ConvertBars(unsigned char DisplayChar[], float V, float Vmax)
+{
+	int Nbars = 0, x = 0;
+	for (x=0; x<16; x++)
+	{
+		DisplayChar[16+x] = 0x20;
+	}
+	Nbars = (16*V)/Vmax;
+	for (x=0; x<Nbars; x++)
+	{
+		DisplayChar[16+x] = 0xFF;
+	}
+		
 }
 
 int NoteToFreq()
@@ -430,7 +437,6 @@ void NoteToDisplay()
 	int freq;
 	freq = NoteToFreq();
 	ident_num(freq, freqstr);
-	//MIDIChar[1] = note_srt[0];
 	MIDIChar[2] = freqstr[2];
 	MIDIChar[3] = freqstr[1];
 	MIDIChar[4] = freqstr[0];
@@ -461,8 +467,7 @@ ISR(USART_RX_vect)
 	NewSerial = 1;
 }
 
-
-ISR(PCINT0_vect) //interrupção do TC1
+ISR(PCINT0_vect)
 {
 	if ((!tst_bit(PINB, PB4))&&(debouncePB4==0))
 	{
@@ -481,7 +486,6 @@ ISR(PCINT0_vect) //interrupção do TC1
 		debouncePB3 = 1;
 	}
 }
-
 
 ISR(TIMER1_COMPA_vect)
 {
