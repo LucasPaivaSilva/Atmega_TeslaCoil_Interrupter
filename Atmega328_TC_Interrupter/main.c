@@ -19,7 +19,6 @@ unsigned char FixedFreqStr[4];
 volatile int ON_TIME = 200;
 
 int NewSerial = 0;
-int blabla = 0;
 
 int debouncePB3 = 0;
 int debouncePB4 = 0;
@@ -57,7 +56,7 @@ unsigned char NoneChar[] = {0x20, 'B', '1', ':',  0x20, '1', '0', '0', 'H', 'z',
 	
 //Settings
 unsigned char SettingsChar[] = {0x20, 'P' , 'W' , '_' , 'l' , 'i' , 'm' , 'i' , 't', ':', 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
-								0x20, 'V', 'e', 'r', 's', 'i', 'o', 'n',0x20, '0', '.', '9', '0', 0x20, 0x20, 0x20};
+								0x20, 'V', 'e', 'r', 's', 'i', 'o', 'n',0x20, '0', '.', '7', '0', 0x20, 0x20, 0x20};
 
 void InitMessage();
 void ChangePWLimit(int operation);
@@ -81,9 +80,8 @@ int main(void)
     
 	DDRD = 0xFF;
 	DDRC |=  0xFF;
-	PORTC &= ~(1 << 2);
-	DDRB  = 0x00;
-	PORTB = 0xFF;
+	DDRB  = 0b00000011;
+	PORTB = 0b11111100;
 	
 	//interrupção dos bots
 	PCICR = 1<<PCIE0;
@@ -93,11 +91,7 @@ int main(void)
 	TCCR1A = 0x00;                        
 	TCCR1B = (1 << CS11) | (1 << WGM12); 
 	
-// 	OCR1A   = 12300;
-// 	TCNT1   = 0;             
-// 	TIMSK1 |= (1 << OCIE1A);  
-	
-	set_bit(PORTC, PC1);
+	set_bit(PORTC, PC5);
 	USART_Inic(MYUBRR);
 	set_bit(UCSR0B, RXCIE0);
 	inic_LCD_4bits();
@@ -160,11 +154,6 @@ int main(void)
 			debouncePB4 = 0;
 			debouncePB5 = 0;
 		}
-		blabla++;
-		if (blabla >=10)
-		{
-			clr_bit(PORTC, PC1);
-		}
     }
 }
 
@@ -174,10 +163,21 @@ void InitMessage()
 	escreve_LCD("Paiva's TC");
 	cmd_LCD(0xC0, 0);
 	escreve_LCD("328P Interrupter");
-	_delay_ms(3000);
+	set_bit(PORTC, PC4);
+	_delay_ms(100);
+	clr_bit(PORTC, PC4);
+	_delay_ms(100);
+	set_bit(PORTC, PC4);
+	_delay_ms(100);
+	clr_bit(PORTC, PC4);
+	_delay_ms(100);
+	set_bit(PORTC, PC4);
+	_delay_ms(100);
+	clr_bit(PORTC, PC4);
+	_delay_ms(2500);
 	cmd_LCD(1, 0);
 	cmd_LCD(0x80, 0);
-	escreve_LCD("Version 0.1");
+	escreve_LCD("Version 0.7");
 	_delay_ms(1000);
 	cmd_LCD(1, 0);
 };
@@ -555,12 +555,12 @@ ISR(PCINT0_vect)
 ISR(TIMER1_COMPA_vect)
 {
 	int x;
-	PORTC |= (1 << 2);           
+	set_bit(PORTB, PB0);           
 	for (x=0;x<ON_TIME;x++)
 	{
 		_delay_us(1);
 	}
-	PORTC &= ~(1 << 2);          
+	clr_bit(PORTB, PB0);         
 }
 
 
