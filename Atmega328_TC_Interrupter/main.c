@@ -20,9 +20,11 @@ volatile int ON_TIME = 200;
 
 int NewSerial = 0;
 
+int debouncePB2 = 0;
 int debouncePB3 = 0;
 int debouncePB4 = 0;
 int debouncePB5 = 0;
+int PB2Flag = 0;
 int PB3Flag = 0;
 int PB4Flag = 1;
 int PB5Flag = 0;
@@ -79,13 +81,13 @@ int main(void)
 {
     
 	DDRD = 0xFF;
-	DDRC |=  0xFF;
+	DDRC = 0xFF;
 	DDRB  = 0b00000011;
 	PORTB = 0b11111100;
 	
 	//interrupção dos bots
 	PCICR = 1<<PCIE0;
-	PCMSK0 = (1<<PCINT3) | (1<<PCINT4) | (1<<PCINT5);
+	PCMSK0 = (1<<PCINT2) | (1<<PCINT3) | (1<<PCINT4) | (1<<PCINT5);
 	
 	//Timer
 	TCCR1A = 0x00;                        
@@ -147,12 +149,14 @@ int main(void)
 			debouncePB3 = 0;
 			debouncePB4 = 0;
 			debouncePB5 = 0;
+			debouncePB2 = 0;
 		}
 		else
 		{
 			debouncePB3 = 0;
 			debouncePB4 = 0;
 			debouncePB5 = 0;
+			debouncePB2 = 0;
 		}
     }
 }
@@ -163,6 +167,7 @@ void InitMessage()
 	escreve_LCD("Paiva's TC");
 	cmd_LCD(0xC0, 0);
 	escreve_LCD("328P Interrupter");
+	_delay_ms(1000);
 	set_bit(PORTC, PC4);
 	_delay_ms(100);
 	clr_bit(PORTC, PC4);
@@ -174,7 +179,7 @@ void InitMessage()
 	set_bit(PORTC, PC4);
 	_delay_ms(100);
 	clr_bit(PORTC, PC4);
-	_delay_ms(2500);
+	_delay_ms(1500);
 	cmd_LCD(1, 0);
 	cmd_LCD(0x80, 0);
 	escreve_LCD("Version 0.7");
@@ -400,6 +405,44 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 			
 		}
 	}
+	
+	if (PB2Flag == 1)
+	{
+		PB2Flag = 0;
+		switch (StateSelection)
+		{
+			case 0:
+			TIMSK1 &= ~(1 << OCIE1A);
+			clr_bit(PORTB, PB0); 
+			set_bit(PORTC, PC4);
+			_delay_ms(100);
+			clr_bit(PORTC, PC4);
+			_delay_ms(100);
+			set_bit(PORTC, PC4);
+			_delay_ms(100);
+			clr_bit(PORTC, PC4);
+			_delay_ms(100);
+			set_bit(PORTC, PC4);
+			_delay_ms(100);
+			clr_bit(PORTC, PC4);
+			clr_bit(PORTC, PC5);
+			break;
+
+			case 1:
+			break;
+			
+			case 2:
+			break;
+			
+			case 3:
+			break;
+			
+			case 4:
+			break;
+			
+		}
+	}
+	
 }
 
 void ChangePW(int operation, unsigned char DisplayChar[])
@@ -549,6 +592,11 @@ ISR(PCINT0_vect)
 	{
 		PB3Flag = 1;
 		debouncePB3 = 1;
+	}
+	else if ((!tst_bit(PINB, PB2))&&(debouncePB2==0))
+	{
+		PB2Flag = 1;
+		debouncePB2 = 1;
 	}
 }
 
