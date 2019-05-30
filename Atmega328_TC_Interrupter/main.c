@@ -161,6 +161,24 @@ int main(void)
     }
 }
 
+void TurnOff()
+{
+	TIMSK1 &= ~(1 << OCIE1A);
+	clr_bit(PORTB, PB0);
+	set_bit(PORTC, PC4);
+	_delay_ms(100);
+	clr_bit(PORTC, PC4);
+	_delay_ms(100);
+	set_bit(PORTC, PC4);
+	_delay_ms(100);
+	clr_bit(PORTC, PC4);
+	_delay_ms(100);
+	set_bit(PORTC, PC4);
+	_delay_ms(100);
+	clr_bit(PORTC, PC4);
+	clr_bit(PORTC, PC5);
+}
+
 void InitMessage()
 {
 	cmd_LCD(0x80, 0);
@@ -412,20 +430,9 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 		switch (StateSelection)
 		{
 			case 0:
-			TIMSK1 &= ~(1 << OCIE1A);
-			clr_bit(PORTB, PB0); 
-			set_bit(PORTC, PC4);
-			_delay_ms(100);
-			clr_bit(PORTC, PC4);
-			_delay_ms(100);
-			set_bit(PORTC, PC4);
-			_delay_ms(100);
-			clr_bit(PORTC, PC4);
-			_delay_ms(100);
-			set_bit(PORTC, PC4);
-			_delay_ms(100);
-			clr_bit(PORTC, PC4);
-			clr_bit(PORTC, PC5);
+			TurnOff();
+			void 
+			
 			break;
 
 			case 1:
