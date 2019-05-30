@@ -6,6 +6,13 @@
  */ 
 
 #include "defs.h"
+#define OutputPin PB0
+#define BuzzerPin PC4
+#define RelePin PC5
+
+unsigned char CanOutput = 1;
+
+int Timer0Division = 0;
 
 float PW_mult = 1.0;
 float PW_mult_limit = 2.0;
@@ -71,6 +78,8 @@ int GetOnTime(int freq);
 void NoteOnOff(int frequency);
 int NoteToFreq();
 void NoteToDisplay();
+void DisableOutput();
+void ReEnableOutput();
 ISR(PCINT0_vect);
 ISR(TIMER1_COMPA_vect);
 
@@ -89,11 +98,14 @@ int main(void)
 	PCICR = 1<<PCIE0;
 	PCMSK0 = (1<<PCINT2) | (1<<PCINT3) | (1<<PCINT4) | (1<<PCINT5);
 	
-	//Timer
+	//Timer 0
+	TCCR0B = (1<<CS02) | (1<<CS00);	
+	
+	//Timer 1
 	TCCR1A = 0x00;                        
 	TCCR1B = (1 << CS11) | (1 << WGM12); 
 	
-	set_bit(PORTC, PC5);
+	set_bit(PORTC, RelePin);
 	USART_Inic(MYUBRR);
 	set_bit(UCSR0B, RXCIE0);
 	inic_LCD_4bits();
@@ -142,21 +154,6 @@ int main(void)
 			case 4:
 			ModifyDisplay(SettingsChar, MenuSelectionBar);
 			break;
-		}
-		if (!(StateSelection==1))
-		{
-			_delay_ms(500);
-			debouncePB3 = 0;
-			debouncePB4 = 0;
-			debouncePB5 = 0;
-			debouncePB2 = 0;
-		}
-		else
-		{
-			debouncePB3 = 0;
-			debouncePB4 = 0;
-			debouncePB5 = 0;
-			debouncePB2 = 0;
 		}
     }
 }
@@ -430,21 +427,23 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 		switch (StateSelection)
 		{
 			case 0:
-			TurnOff();
-			void 
-			
+			TurnOff();			
 			break;
 
 			case 1:
+			DisableOutput();
 			break;
 			
 			case 2:
+			DisableOutput();
 			break;
 			
 			case 3:
+			DisableOutput();
 			break;
 			
 			case 4:
+			ReEnableOutput();
 			break;
 			
 		}
@@ -557,6 +556,38 @@ void NoteToDisplay()
 	MIDIChar[4] = freqstr[0];
 }
 
+void DisableOutput()
+{
+	CanOutput = 0;
+	TIMSK1 &= ~(1 << OCIE1A);
+	clr_bit(PORTB, PB0);
+	set_bit(PORTC, PC4);
+	_delay_ms(500);
+	clr_bit(PORTC, PC4);
+	cmd_LCD(1,0);
+	escreve_LCD("Disabled out");
+	_delay_ms(3000);
+}
+
+void ReEnableOutput()
+{
+	if (CanOutput == 0)
+	{
+		CanOutput = 1;
+		set_bit(PORTC, PC4);
+		_delay_ms(100);
+		clr_bit(PORTC, PC4);
+		_delay_ms(100);
+		set_bit(PORTC, PC4);
+		_delay_ms(100);
+		clr_bit(PORTC, PC4);
+		cmd_LCD(1,0);
+		escreve_LCD("Enabled out");
+		_delay_ms(3000);
+		
+	}
+}
+
 ISR(USART_RX_vect)
 {
 	char status;
@@ -584,6 +615,7 @@ ISR(USART_RX_vect)
 
 ISR(PCINT0_vect)
 {
+	set_bit(TIMSK0,TOIE0);
 	if ((!tst_bit(PINB, PB4))&&(debouncePB4==0))
 	{
 		
@@ -609,14 +641,33 @@ ISR(PCINT0_vect)
 
 ISR(TIMER1_COMPA_vect)
 {
-	int x;
-	set_bit(PORTB, PB0);           
-	for (x=0;x<ON_TIME;x++)
+	if (CanOutput == 1)
 	{
-		_delay_us(1);
-	}
-	clr_bit(PORTB, PB0);         
+		int x;
+		set_bit(PORTB, PB0);
+		for (x=0;x<ON_TIME;x++)
+		{
+			_delay_us(1);
+		}
+		clr_bit(PORTB, PB0);
+	}   
+	else
+	{}     
 }
+
+ISR(TIMER0_OVF_vect)
+{
+	Timer0Division++;
+	if (Timer0Division >= 17)
+	{
+		debouncePB3 = 0;
+		debouncePB4 = 0;
+		debouncePB5 = 0;
+		debouncePB2 = 0;
+		Timer0Division = 0;
+		clr_bit(TIMSK0,TOIE0);
+	}
+}
 
 
 
