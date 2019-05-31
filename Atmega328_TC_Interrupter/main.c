@@ -7,12 +7,17 @@
 
 #include "defs.h"
 #define OutputPin PB0
-#define BuzzerPin PC4
-#define RelePin PC5
+#define RelePin PB1
+
+float Vcc;
+float VB1;
+float VB2;
+unsigned char teststr[4];
 
 unsigned char CanOutput = 1;
 
 int Timer0Division = 0;
+int Timer2Division = 0;
 
 float PW_mult = 1.0;
 float PW_mult_limit = 2.0;
@@ -90,7 +95,6 @@ int main(void)
 {
     
 	DDRD = 0xFF;
-	DDRC = 0xFF;
 	DDRB  = 0b00000011;
 	PORTB = 0b11111100;
 	
@@ -105,7 +109,14 @@ int main(void)
 	TCCR1A = 0x00;                        
 	TCCR1B = (1 << CS11) | (1 << WGM12); 
 	
-	set_bit(PORTC, RelePin);
+	//Timer 2
+	TCCR2B = (1<<CS22) | (1<<CS21) | (1<<CS20);
+	set_bit(TIMSK2,TOIE2);
+	
+	ADMUX = (1<<REFS0);
+	ADCSRA = (1<<ADEN)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
+	
+	set_bit(PORTB, RelePin);
 	USART_Inic(MYUBRR);
 	set_bit(UCSR0B, RXCIE0);
 	inic_LCD_4bits();
@@ -162,18 +173,7 @@ void TurnOff()
 {
 	TIMSK1 &= ~(1 << OCIE1A);
 	clr_bit(PORTB, PB0);
-	set_bit(PORTC, PC4);
-	_delay_ms(100);
-	clr_bit(PORTC, PC4);
-	_delay_ms(100);
-	set_bit(PORTC, PC4);
-	_delay_ms(100);
-	clr_bit(PORTC, PC4);
-	_delay_ms(100);
-	set_bit(PORTC, PC4);
-	_delay_ms(100);
-	clr_bit(PORTC, PC4);
-	clr_bit(PORTC, PC5);
+	clr_bit(PORTB, RelePin);
 }
 
 void InitMessage()
@@ -182,19 +182,7 @@ void InitMessage()
 	escreve_LCD("Paiva's TC");
 	cmd_LCD(0xC0, 0);
 	escreve_LCD("328P Interrupter");
-	_delay_ms(1000);
-	set_bit(PORTC, PC4);
-	_delay_ms(100);
-	clr_bit(PORTC, PC4);
-	_delay_ms(100);
-	set_bit(PORTC, PC4);
-	_delay_ms(100);
-	clr_bit(PORTC, PC4);
-	_delay_ms(100);
-	set_bit(PORTC, PC4);
-	_delay_ms(100);
-	clr_bit(PORTC, PC4);
-	_delay_ms(1500);
+	_delay_ms(2500);
 	cmd_LCD(1, 0);
 	cmd_LCD(0x80, 0);
 	escreve_LCD("Version 0.7");
@@ -560,10 +548,7 @@ void DisableOutput()
 {
 	CanOutput = 0;
 	TIMSK1 &= ~(1 << OCIE1A);
-	clr_bit(PORTB, PB0);
-	set_bit(PORTC, PC4);
-	_delay_ms(500);
-	clr_bit(PORTC, PC4);
+	clr_bit(PORTB, OutputPin);
 	cmd_LCD(1,0);
 	escreve_LCD("Disabled out");
 	_delay_ms(3000);
@@ -574,18 +559,31 @@ void ReEnableOutput()
 	if (CanOutput == 0)
 	{
 		CanOutput = 1;
-		set_bit(PORTC, PC4);
-		_delay_ms(100);
-		clr_bit(PORTC, PC4);
-		_delay_ms(100);
-		set_bit(PORTC, PC4);
-		_delay_ms(100);
-		clr_bit(PORTC, PC4);
 		cmd_LCD(1,0);
 		escreve_LCD("Enabled out");
 		_delay_ms(3000);
 		
 	}
+}
+
+uint16_t ReadADC(uint8_t ch)
+{
+	// select the corresponding channel 0~7
+	// ANDing with ’7? will always keep the value
+	// of ‘ch’ between 0 and 7
+	ch &= 0b00000111;  // AND operation with 7
+	ADMUX = (ADMUX & 0xF8)|ch; // clears the bottom 3 bits before ORing
+	
+	// start single convertion
+	// write ’1? to ADSC
+	ADCSRA |= (1<<ADSC);
+	
+	// wait for conversion to complete
+	// ADSC becomes ’0? again
+	// till then, run loop continuously
+	while(ADCSRA & (1<<ADSC));
+	
+	return (ADC);
 }
 
 ISR(USART_RX_vect)
@@ -667,7 +665,33 @@ ISR(TIMER0_OVF_vect)
 		Timer0Division = 0;
 		clr_bit(TIMSK0,TOIE0);
 	}
-}
+}ISR(TIMER2_OVF_vect)
+{
+	Timer2Division++;
+	if (Timer2Division >= 30)
+	{
+		Timer2Division = 0;
+		Vcc = ReadADC(1);
+		VB1 = ReadADC(0);
+		VB2 = Vcc - VB1;
+		ident_num(VB1, teststr);
+		cmd_LCD(1, 0);
+		cmd_LCD(0x80, 0);
+		cmd_LCD(teststr[3], 1);
+		cmd_LCD(teststr[2], 1);
+		cmd_LCD(teststr[1], 1);
+		cmd_LCD(teststr[0], 1);
+		cmd_LCD(0xC0, 0);
+		ident_num(VB2, teststr);
+		cmd_LCD(teststr[3], 1);
+		cmd_LCD(teststr[2], 1);
+		cmd_LCD(teststr[1], 1);
+		cmd_LCD(teststr[0], 1);
+		_delay_ms(30);
+		
+		
+	}
+}
 
 
 
