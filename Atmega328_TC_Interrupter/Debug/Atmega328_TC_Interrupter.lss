@@ -2415,7 +2415,7 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
     117c:	08 95       	ret
 
 0000117e <main>:
-
+ISR(TIMER1_COMPA_vect);
 
 int main(void)
 {
