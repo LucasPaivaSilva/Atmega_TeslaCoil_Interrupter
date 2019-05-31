@@ -8,7 +8,7 @@ import serial
 import datetime
 data = ''
 
-ser = serial.Serial('COM5', 9600)
+ser = serial.Serial('COM15', 9600)
 ser.timeout = 0.01
 if len(sys.argv) > 1:
     portname = sys.argv[1]
