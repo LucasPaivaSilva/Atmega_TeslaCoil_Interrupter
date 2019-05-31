@@ -12,7 +12,7 @@
 float Vcc;
 float VB1;
 float VB2;
-unsigned char teststr[4];
+int NewBatReading = 0;
 
 unsigned char CanOutput = 1;
 
@@ -70,7 +70,7 @@ unsigned char NoneChar[] = {0x20, 'B', '1', ':',  0x20, '1', '0', '0', 'H', 'z',
 	
 //Settings
 unsigned char SettingsChar[] = {0x20, 'P' , 'W' , '_' , 'l' , 'i' , 'm' , 'i' , 't', ':', 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
-								0x20, 'V', 'e', 'r', 's', 'i', 'o', 'n',0x20, '0', '.', '7', '0', 0x20, 0x20, 0x20};
+								0x20, 'R', 'e', 'a', 'd', 'i', 'n', 'g',0x20, 'B', 'a', 't', '1', '/', '2', 0x20};
 
 void InitMessage();
 void ChangePWLimit(int operation);
@@ -85,6 +85,8 @@ int NoteToFreq();
 void NoteToDisplay();
 void DisableOutput();
 void ReEnableOutput();
+void TurnOff(int ExitStatus);
+void BatToDisplay();
 ISR(PCINT0_vect);
 ISR(TIMER1_COMPA_vect);
 
@@ -163,16 +165,55 @@ int main(void)
 			break;
 			
 			case 4:
+			if (NewBatReading == 1)
+			{
+				NewBatReading = 0;
+				BatToDisplay();
+				RefreshDisplay(SettingsChar);
+			}
 			ModifyDisplay(SettingsChar, MenuSelectionBar);
 			break;
 		}
     }
 }
 
-void TurnOff()
+void TurnOff(int ExitStatus)
 {
 	TIMSK1 &= ~(1 << OCIE1A);
 	clr_bit(PORTB, PB0);
+	cmd_LCD(1, 0);
+	cmd_LCD(0x80, 0);
+	if (ExitStatus>=1)//Por causa da bateria
+	{
+		escreve_LCD("BATERIA BAIXA");
+		_delay_ms(1000);
+		cmd_LCD(1, 0);
+		escreve_LCD("desligando");
+		_delay_ms(500);
+		cmd_LCD(1, 0);
+		escreve_LCD("desligando.");	
+		_delay_ms(500);
+		cmd_LCD(1, 0);
+		escreve_LCD("desligando..");	
+		_delay_ms(500);
+		cmd_LCD(1, 0);
+		escreve_LCD("desligando...");	
+		_delay_ms(500);	
+	}
+	else
+	{
+		escreve_LCD("desligando");
+		_delay_ms(500);
+		cmd_LCD(1, 0);
+		escreve_LCD("desligando.");
+		_delay_ms(500);
+		cmd_LCD(1, 0);
+		escreve_LCD("desligando..");
+		_delay_ms(500);
+		cmd_LCD(1, 0);
+		escreve_LCD("desligando...");
+		_delay_ms(500);
+	}
 	clr_bit(PORTB, RelePin);
 }
 
@@ -185,7 +226,7 @@ void InitMessage()
 	_delay_ms(2500);
 	cmd_LCD(1, 0);
 	cmd_LCD(0x80, 0);
-	escreve_LCD("Version 0.7");
+	escreve_LCD("Version 1");
 	_delay_ms(1000);
 	cmd_LCD(1, 0);
 };
@@ -245,6 +286,7 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 			else if (FixedModeSubStateSelection == 2)
 			{
 				ChangePW(0, FixedChar);
+				NoteOnOff(FixedFreq);
 				ConvertBars(FixedChar, PW_mult, PW_mult_limit);
 				RefreshDisplay(FixedChar);
 			}
@@ -335,6 +377,7 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 			else if (FixedModeSubStateSelection == 2)
 			{
 				ChangePW(1, FixedChar);
+				NoteOnOff(FixedFreq);
 				ConvertBars(FixedChar, PW_mult, PW_mult_limit);
 				RefreshDisplay(FixedChar);
 			}
@@ -415,7 +458,7 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 		switch (StateSelection)
 		{
 			case 0:
-			TurnOff();			
+			TurnOff(0);			
 			break;
 
 			case 1:
@@ -544,6 +587,29 @@ void NoteToDisplay()
 	MIDIChar[4] = freqstr[0];
 }
 
+void BatToDisplay()
+{
+	float temp;
+	unsigned char TempStr[3];
+	temp = VB1 * 500/1024;
+	ident_num(temp, TempStr);
+	SettingsChar[17] = 'B';
+	SettingsChar[18] = '1';
+	SettingsChar[19] = ':';
+	SettingsChar[20] = TempStr[2];
+	SettingsChar[21] = '.';
+	SettingsChar[22] = TempStr[1];
+	SettingsChar[23] = 0x20;
+	temp = VB2 * 500/1024;
+	ident_num(temp, TempStr);
+	SettingsChar[24] = 'B';
+	SettingsChar[25] = '2';
+	SettingsChar[26] = ':';
+	SettingsChar[27] = TempStr[2];
+	SettingsChar[28] = '.';
+	SettingsChar[29] = TempStr[1];
+}
+
 void DisableOutput()
 {
 	CanOutput = 0;
@@ -668,28 +734,25 @@ ISR(TIMER0_OVF_vect)
 }ISR(TIMER2_OVF_vect)
 {
 	Timer2Division++;
-	if (Timer2Division >= 30)
+	if (Timer2Division >= 300)
 	{
 		Timer2Division = 0;
-		Vcc = ReadADC(1);
-		VB1 = ReadADC(0);
+		NewBatReading = 1;
+		Vcc = ReadADC(1)*2;
+		VB1 = ReadADC(0)*2;
 		VB2 = Vcc - VB1;
-		ident_num(VB1, teststr);
-		cmd_LCD(1, 0);
-		cmd_LCD(0x80, 0);
-		cmd_LCD(teststr[3], 1);
-		cmd_LCD(teststr[2], 1);
-		cmd_LCD(teststr[1], 1);
-		cmd_LCD(teststr[0], 1);
-		cmd_LCD(0xC0, 0);
-		ident_num(VB2, teststr);
-		cmd_LCD(teststr[3], 1);
-		cmd_LCD(teststr[2], 1);
-		cmd_LCD(teststr[1], 1);
-		cmd_LCD(teststr[0], 1);
-		_delay_ms(30);
-		
-		
+		if (Vcc<=1230)
+		{
+			TurnOff(1);
+		}
+		if (VB1<=615)
+		{
+			TurnOff(1);
+		}
+		if (VB2<=615)
+		{
+			TurnOff(1);
+		}		
 	}
 }
 
