@@ -72,6 +72,7 @@ unsigned char NoneChar[] = {0x20, 'B', '1', ':',  0x20, '1', '0', '0', 'H', 'z',
 unsigned char SettingsChar[] = {0x20, 'P' , 'W' , '_' , 'l' , 'i' , 'm' , 'i' , 't', ':', 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
 								0x20, 'R', 'e', 'a', 'd', 'i', 'n', 'g',0x20, 'B', 'a', 't', '1', '2', 0x20, 0x20};
 
+
 void InitMessage();
 void ChangePWLimit(int operation);
 void RefreshDisplay(unsigned char DisplayChar[]);
@@ -89,9 +90,6 @@ void TurnOff(int ExitStatus);
 void BatToDisplay();
 ISR(PCINT0_vect);
 ISR(TIMER1_COMPA_vect);
-
-
-
 
 int main(void)
 {
