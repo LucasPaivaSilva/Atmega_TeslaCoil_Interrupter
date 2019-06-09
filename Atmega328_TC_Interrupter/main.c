@@ -9,6 +9,7 @@
 #define OutputPin PB0
 #define RelePin PB1
 
+uint16_t  ActivateBatReading = 0;
 float Vcc;
 float VB1;
 float VB2;
@@ -16,8 +17,8 @@ int NewBatReading = 0;
 
 unsigned char CanOutput = 1;
 
-int Timer0Division = 0;
-int Timer2Division = 0;
+uint16_t  Timer0Division = 0;
+uint16_t  Timer2Division = 0;
 
 float PW_mult = 1.0;
 float PW_mult_limit = 2.0;
@@ -32,19 +33,19 @@ volatile int ON_TIME = 200;
 
 int NewSerial = 0;
 
-int debouncePB2 = 0;
-int debouncePB3 = 0;
-int debouncePB4 = 0;
-int debouncePB5 = 0;
-int PB2Flag = 0;
-int PB3Flag = 0;
-int PB4Flag = 1;
-int PB5Flag = 0;
+uint16_t  debouncePB2 = 0;
+uint16_t  debouncePB3 = 0;
+uint16_t  debouncePB4 = 0;
+uint16_t  debouncePB5 = 0;
+uint16_t  PB2Flag = 0;
+uint16_t  PB3Flag = 0;
+uint16_t  PB4Flag = 1;
+uint16_t  PB5Flag = 0;
 
-int StateSelection = 0;
-int FixedModeSubStateSelection = 0;
+uint16_t  StateSelection = 0;
+uint16_t  FixedModeSubStateSelection = 0;
 
-char note_srt[3]; // recebe o valor da nota e o estado da mesma
+char note_srt[3]; 
 unsigned char freqstr[4];
 
 
@@ -318,6 +319,7 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
 			{
 				StateSelection = 1; 
 				ConvertBars(MIDIChar, PW_mult, PW_mult_limit); 
+				ChangePW(2, MIDIChar); 
 				RefreshDisplay(MIDIChar);
 			}
 			
@@ -631,19 +633,8 @@ void ReEnableOutput()
 
 uint16_t ReadADC(uint8_t ch)
 {
-	// select the corresponding channel 0~7
-	// ANDing with ’7? will always keep the value
-	// of ‘ch’ between 0 and 7
-	ch &= 0b00000111;  // AND operation with 7
-	ADMUX = (ADMUX & 0xF8)|ch; // clears the bottom 3 bits before ORing
-	
-	// start single convertion
-	// write ’1? to ADSC
+	ADMUX = (ADMUX & 0xF8)|ch; 
 	ADCSRA |= (1<<ADSC);
-	
-	// wait for conversion to complete
-	// ADSC becomes ’0? again
-	// till then, run loop continuously
 	while(ADCSRA & (1<<ADSC));
 	
 	return (ADC);
@@ -738,18 +729,21 @@ ISR(TIMER0_OVF_vect)
 		Vcc = ReadADC(1)*2;
 		VB1 = ReadADC(0)*2;
 		VB2 = Vcc - VB1;
-		if (Vcc<=1230)
+		if (ActivateBatReading == 1)
 		{
-			//TurnOff(1);
-		}
-		if (VB1<=615)
-		{
-			//TurnOff(1);
-		}
-		if (VB2<=615)
-		{
-			//TurnOff(1);
-		}		
+			if (Vcc<=1230)
+			{
+				TurnOff(1);
+			}
+			if (VB1<=615)
+			{
+				TurnOff(1);
+			}
+			if (VB2<=615)
+			{
+				TurnOff(1);
+			}
+		}	
 	}
 }
 
