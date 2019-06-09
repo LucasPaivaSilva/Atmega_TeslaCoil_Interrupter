@@ -740,15 +740,15 @@ ISR(TIMER0_OVF_vect)
 		VB2 = Vcc - VB1;
 		if (Vcc<=1230)
 		{
-			TurnOff(1);
+			//TurnOff(1);
 		}
 		if (VB1<=615)
 		{
-			TurnOff(1);
+			//TurnOff(1);
 		}
 		if (VB2<=615)
 		{
-			TurnOff(1);
+			//TurnOff(1);
 		}		
 	}
 }
