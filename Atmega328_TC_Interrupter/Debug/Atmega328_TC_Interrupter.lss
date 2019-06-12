@@ -23,11 +23,11 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING
   9 .debug_frame  00000478  00000000  00000000  0000689c  2**2
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_str    000007b8  00000000  00000000  00006d14  2**0
+ 10 .debug_str    00000820  00000000  00000000  00006d14  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_loc    00001aa3  00000000  00000000  000074cc  2**0
+ 11 .debug_loc    00001aa3  00000000  00000000  00007534  2**0
                   CONTENTS, READONLY, DEBUGGING
- 12 .debug_ranges 00000148  00000000  00000000  00008f6f  2**0
+ 12 .debug_ranges 00000148  00000000  00000000  00008fd7  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -166,12 +166,6 @@ Disassembly of section .text:
      124:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
 
 00000128 <cmd_LCD>:
-//Sub-rotina de escrita no LCD - dados armazenados na FLASH
-//---------------------------------------------------------------------------------------------
-void escreve_LCD_Flash(const char *c)
-{
-   for (;pgm_read_byte(&(*c))!=0;c++) cmd_LCD(pgm_read_byte(&(*c)),1);
-}
      128:	61 11       	cpse	r22, r1
      12a:	02 c0       	rjmp	.+4      	; 0x130 <cmd_LCD+0x8>
      12c:	5a 98       	cbi	0x0b, 2	; 11
@@ -349,37 +343,17 @@ void escreve_LCD_Flash(const char *c)
      288:	08 95       	ret
 
 0000028a <ident_num>:
-//---------------------------------------------------------------------------------------------
-//Conversão de um número em seus digitos individuais
-//---------------------------------------------------------------------------------------------
-void ident_num(unsigned int valor, unsigned char *disp)
-{   
      28a:	ac 01       	movw	r20, r24
      28c:	fb 01       	movw	r30, r22
      28e:	db 01       	movw	r26, r22
      290:	9b 01       	movw	r18, r22
      292:	2b 5f       	subi	r18, 0xFB	; 251
      294:	3f 4f       	sbci	r19, 0xFF	; 255
- 	unsigned char n;
-
-	for(n=0; n<tam_vetor; n++)
-		disp[n] = 0 + conv_ascii;		//limpa vetor para armazenagem do digitos 
      296:	80 e3       	ldi	r24, 0x30	; 48
      298:	8d 93       	st	X+, r24
-//---------------------------------------------------------------------------------------------
-void ident_num(unsigned int valor, unsigned char *disp)
-{   
- 	unsigned char n;
-
-	for(n=0; n<tam_vetor; n++)
      29a:	a2 17       	cp	r26, r18
      29c:	b3 07       	cpc	r27, r19
      29e:	e1 f7       	brne	.-8      	; 0x298 <ident_num+0xe>
-		disp[n] = 0 + conv_ascii;		//limpa vetor para armazenagem do digitos 
-
-	do
-	{
-       *disp = (valor%10) + conv_ascii;	//pega o resto da divisao por 10 
      2a0:	9a 01       	movw	r18, r20
      2a2:	ad ec       	ldi	r26, 0xCD	; 205
      2a4:	bc ec       	ldi	r27, 0xCC	; 204
@@ -407,7 +381,6 @@ void ident_num(unsigned int valor, unsigned char *disp)
      2d2:	c9 01       	movw	r24, r18
      2d4:	80 5d       	subi	r24, 0xD0	; 208
      2d6:	81 93       	st	Z+, r24
-	   valor /=10;						//pega o inteiro da divisão por 10
      2d8:	9a 01       	movw	r18, r20
      2da:	0e 94 3a 0f 	call	0x1e74	; 0x1e74 <__umulhisi3>
      2de:	ac 01       	movw	r20, r24
@@ -417,13 +390,9 @@ void ident_num(unsigned int valor, unsigned char *disp)
      2e6:	47 95       	ror	r20
      2e8:	56 95       	lsr	r21
      2ea:	47 95       	ror	r20
-	   disp++;
-
-	}while (valor!=0);
      2ec:	41 15       	cp	r20, r1
      2ee:	51 05       	cpc	r21, r1
      2f0:	b9 f6       	brne	.-82     	; 0x2a0 <ident_num+0x16>
-}
      2f2:	08 95       	ret
 
 000002f4 <TurnOff>:
@@ -1623,7 +1592,7 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
      b5e:	91 05       	cpc	r25, r1
      b60:	09 f4       	brne	.+2      	; 0xb64 <ModifyDisplay+0x3a>
      b62:	5a c0       	rjmp	.+180    	; 0xc18 <ModifyDisplay+0xee>
-     b64:	28 f4       	brcc	.+10     	; 0xb70 <ModifyDisplay+0x46>
+     b64:	2c f4       	brge	.+10     	; 0xb70 <ModifyDisplay+0x46>
      b66:	00 97       	sbiw	r24, 0x00	; 0
      b68:	59 f0       	breq	.+22     	; 0xb80 <ModifyDisplay+0x56>
      b6a:	01 97       	sbiw	r24, 0x01	; 1
@@ -1905,7 +1874,7 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
      d7e:	91 05       	cpc	r25, r1
      d80:	09 f4       	brne	.+2      	; 0xd84 <ModifyDisplay+0x25a>
      d82:	af c0       	rjmp	.+350    	; 0xee2 <ModifyDisplay+0x3b8>
-     d84:	30 f4       	brcc	.+12     	; 0xd92 <ModifyDisplay+0x268>
+     d84:	34 f4       	brge	.+12     	; 0xd92 <ModifyDisplay+0x268>
      d86:	00 97       	sbiw	r24, 0x00	; 0
      d88:	61 f0       	breq	.+24     	; 0xda2 <ModifyDisplay+0x278>
      d8a:	01 97       	sbiw	r24, 0x01	; 1
@@ -2248,7 +2217,7 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
     1034:	82 30       	cpi	r24, 0x02	; 2
     1036:	91 05       	cpc	r25, r1
     1038:	e1 f0       	breq	.+56     	; 0x1072 <ModifyDisplay+0x548>
-    103a:	18 f4       	brcc	.+6      	; 0x1042 <ModifyDisplay+0x518>
+    103a:	1c f4       	brge	.+6      	; 0x1042 <ModifyDisplay+0x518>
     103c:	01 97       	sbiw	r24, 0x01	; 1
     103e:	49 f0       	breq	.+18     	; 0x1052 <ModifyDisplay+0x528>
     1040:	6e c0       	rjmp	.+220    	; 0x111e <ModifyDisplay+0x5f4>
@@ -2393,7 +2362,7 @@ void ModifyDisplay(unsigned char DisplayChar[], unsigned char DisplaySelectionBa
     113a:	82 30       	cpi	r24, 0x02	; 2
     113c:	91 05       	cpc	r25, r1
     113e:	a1 f0       	breq	.+40     	; 0x1168 <ModifyDisplay+0x63e>
-    1140:	28 f4       	brcc	.+10     	; 0x114c <ModifyDisplay+0x622>
+    1140:	2c f4       	brge	.+10     	; 0x114c <ModifyDisplay+0x622>
     1142:	00 97       	sbiw	r24, 0x00	; 0
     1144:	49 f0       	breq	.+18     	; 0x1158 <ModifyDisplay+0x62e>
     1146:	01 97       	sbiw	r24, 0x01	; 1
@@ -2574,7 +2543,7 @@ int main(void)
     121e:	82 30       	cpi	r24, 0x02	; 2
     1220:	91 05       	cpc	r25, r1
     1222:	c1 f1       	breq	.+112    	; 0x1294 <main+0x10a>
-    1224:	30 f4       	brcc	.+12     	; 0x1232 <main+0xa8>
+    1224:	34 f4       	brge	.+12     	; 0x1232 <main+0xa8>
     1226:	00 97       	sbiw	r24, 0x00	; 0
     1228:	59 f0       	breq	.+22     	; 0x1240 <main+0xb6>
     122a:	81 30       	cpi	r24, 0x01	; 1
@@ -2994,7 +2963,7 @@ ISR(TIMER0_OVF_vect)
     14cc:	80 93 52 02 	sts	0x0252, r24	; 0x800252 <Timer0Division>
 	if (Timer0Division >= 17)
     14d0:	41 97       	sbiw	r24, 0x11	; 17
-    14d2:	c8 f0       	brcs	.+50     	; 0x1506 <__vector_16+0x5a>
+    14d2:	cc f0       	brlt	.+50     	; 0x1506 <__vector_16+0x5a>
 	{
 		debouncePB3 = 0;
     14d4:	10 92 4b 02 	sts	0x024B, r1	; 0x80024b <debouncePB3+0x1>
@@ -3062,7 +3031,7 @@ ISR(TIMER2_OVF_vect)
     154c:	8c 32       	cpi	r24, 0x2C	; 44
     154e:	21 e0       	ldi	r18, 0x01	; 1
     1550:	92 07       	cpc	r25, r18
-    1552:	28 f4       	brcc	.+10     	; 0x155e <__vector_9+0x46>
+    1552:	2c f4       	brge	.+10     	; 0x155e <__vector_9+0x46>
 	}
 }
 
@@ -3205,12 +3174,6 @@ ISR(TIMER2_OVF_vect)
     1684:	18 95       	reti
 
 00001686 <USART_Inic>:
-}
-//---------------------------------------------------------------------------
-void USART_Transmite(unsigned char dado)
-{
-	while (!( UCSR0A & (1<<UDRE0)) );	//espera o dado ser enviado
-	UDR0 = dado; 					//envia o dado
     1686:	90 93 c5 00 	sts	0x00C5, r25	; 0x8000c5 <__TEXT_REGION_LENGTH__+0x7e00c5>
     168a:	80 93 c4 00 	sts	0x00C4, r24	; 0x8000c4 <__TEXT_REGION_LENGTH__+0x7e00c4>
     168e:	10 92 c0 00 	sts	0x00C0, r1	; 0x8000c0 <__TEXT_REGION_LENGTH__+0x7e00c0>
@@ -3221,19 +3184,12 @@ void USART_Transmite(unsigned char dado)
     169e:	08 95       	ret
 
 000016a0 <USART_Recebe>:
-}
-//---------------------------------------------------------------------------
-unsigned char USART_Recebe()
-{
-	while (!(UCSR0A & (1<<RXC0)));	//espera o dado ser recebido
     16a0:	e0 ec       	ldi	r30, 0xC0	; 192
     16a2:	f0 e0       	ldi	r31, 0x00	; 0
     16a4:	80 81       	ld	r24, Z
     16a6:	88 23       	and	r24, r24
     16a8:	ec f7       	brge	.-6      	; 0x16a4 <USART_Recebe+0x4>
-	return UDR0; 				//retorna o dado recebido
     16aa:	80 91 c6 00 	lds	r24, 0x00C6	; 0x8000c6 <__TEXT_REGION_LENGTH__+0x7e00c6>
-}
     16ae:	08 95       	ret
 
 000016b0 <__subsf3>:

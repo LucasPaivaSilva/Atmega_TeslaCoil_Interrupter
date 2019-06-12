@@ -17,8 +17,8 @@ int NewBatReading = 0;
 
 unsigned char CanOutput = 1;
 
-uint16_t  Timer0Division = 0;
-uint16_t  Timer2Division = 0;
+int  Timer0Division = 0;
+int  Timer2Division = 0;
 
 float PW_mult = 1.0;
 float PW_mult_limit = 2.0;
@@ -33,17 +33,17 @@ volatile int ON_TIME = 200;
 
 int NewSerial = 0;
 
-uint16_t  debouncePB2 = 0;
-uint16_t  debouncePB3 = 0;
-uint16_t  debouncePB4 = 0;
-uint16_t  debouncePB5 = 0;
-uint16_t  PB2Flag = 0;
-uint16_t  PB3Flag = 0;
-uint16_t  PB4Flag = 1;
-uint16_t  PB5Flag = 0;
+int  debouncePB2 = 0;
+int  debouncePB3 = 0;
+int  debouncePB4 = 0;
+int  debouncePB5 = 0;
+int  PB2Flag = 0;
+int  PB3Flag = 0;
+int  PB4Flag = 1;
+int  PB5Flag = 0;
 
-uint16_t  StateSelection = 0;
-uint16_t  FixedModeSubStateSelection = 0;
+int  StateSelection = 0;
+int  FixedModeSubStateSelection = 0;
 
 char note_srt[3]; 
 unsigned char freqstr[4];
