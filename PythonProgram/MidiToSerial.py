@@ -8,7 +8,7 @@ import serial
 import datetime
 data = ''
 
-ser = serial.Serial('COM15', 9600)
+ser = serial.Serial('/dev/tty.usbmodem1491', 9600)
 ser.timeout = 0.01
 if len(sys.argv) > 1:
     portname = sys.argv[1]
@@ -21,14 +21,18 @@ try:
         print('Waiting for messages...')
         for message in port:
             print('Received {}'.format(message))
-            if message.type == 'note_on':
-            	data = 'L'
-            else:
-            	data = 'D'
-            if message.note <= 16:
-                message.note = 16
-            data = data + str(message.note)
-            print(data)
+            print(message)
+            print(message.type)
+            if (message.type != 'control_change') and (message.type != 'pitchwheel') and (message.type != 'program_change'):   
+                if message.type == 'note_on':
+                    data = 'L'
+                else:
+                    data = 'D'
+                if message.note <= 16:
+                    message.note = 16
+                data = data + str(message.note)
+                print(data)
+                print('')
             ser.write(data.encode())
             sys.stdout.flush()
 except KeyboardInterrupt:
