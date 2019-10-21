@@ -30,6 +30,8 @@ try:
                     data = 'D'
                 if message.note <= 16:
                     message.note = 16
+                if message.note >= 70:
+                    message.note = 60
                 data = data + str(message.note)
                 print(data)
                 print('')
