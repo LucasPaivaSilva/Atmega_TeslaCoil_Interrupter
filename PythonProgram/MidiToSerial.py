@@ -8,7 +8,7 @@ import serial
 import datetime
 data = ''
 
-ser = serial.Serial('/dev/tty.usbmodem1491', 9600)
+ser = serial.Serial('COM4', 9600)
 ser.timeout = 0.01
 if len(sys.argv) > 1:
     portname = sys.argv[1]
@@ -30,8 +30,9 @@ try:
                     data = 'D'
                 if message.note <= 16:
                     message.note = 16
-                if message.note >= 70:
-                    message.note = 70
+                if message.note >= 75:
+                    print(str("Overdrive! Pitch was: ") + str(message.note))
+                    message.note = 75
                 data = data + str(message.note)
                 print(data)
                 print('')
@@ -39,3 +40,4 @@ try:
             sys.stdout.flush()
 except KeyboardInterrupt:
     pass
+
